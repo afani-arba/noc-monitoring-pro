@@ -39,7 +39,7 @@ services:
   # 1. NOC MONITORING PRO — BACKEND
   # ═════════════════════════════════════════════════════════════════
   noc-backend:
-    image: ghcr.io/afani-arba/noc-sentinel-v3-backend:latest
+    image: ghcr.io/afani-arba/noc-monitoring-pro-backend:latest
     container_name: noc-monitoring-pro-backend
     restart: always
     logging: *default-logging
@@ -47,8 +47,8 @@ services:
       - ./backend/.env
     environment:
       - MONGO_URI=mongodb://mongodb:27017/nocmonitoringpro
-      # ── Edition (Pro — fitur monitoring aktif) ────────────────────
-      - APP_EDITION=pro
+      # ── Edition (Monitoring Pro — fitur monitoring aktif) ────────────────────
+      - APP_EDITION=monitoring_pro
       # ── Core Monitoring Services ──────────────────────────────────
       - ENABLE_POLLING=true
       - ENABLE_SSE=true

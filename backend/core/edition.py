@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 EDITION: str = os.environ.get("APP_EDITION", "pro").lower().strip()
 
 # Normalisasi: pastikan hanya nilai valid
-if EDITION not in ("pro", "enterprise"):
+if EDITION not in ("pro", "enterprise", "monitoring_pro"):
     logger.warning(
         f"APP_EDITION='{EDITION}' tidak valid. Menggunakan 'pro' sebagai default."
     )
@@ -31,6 +31,7 @@ if EDITION not in ("pro", "enterprise"):
 EDITION_NAMES = {
     "pro": "NOC-Sentinel Pro",
     "enterprise": "NOC-Sentinel Enterprise",
+    "monitoring_pro": "NOC-Monitoring-Pro",
 }
 
 EDITION_NAME: str = EDITION_NAMES.get(EDITION, "NOC-Sentinel Pro")
