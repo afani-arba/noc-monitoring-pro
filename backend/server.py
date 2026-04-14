@@ -197,6 +197,12 @@ async def lifespan(app: FastAPI):
         _background_tasks.append(t)
         logger.info("Session cache started")
 
+    # Daily snapshot — menyimpan PPPoE/Hotspot/bandwidth harian untuk laporan historis
+    from services.daily_snapshot_service import daily_snapshot_loop
+    t = asyncio.create_task(daily_snapshot_loop())
+    _background_tasks.append(t)
+    logger.info("Daily snapshot service started")
+
     # License verification
     from services.license_service import license_check_loop
     t = asyncio.create_task(license_check_loop())

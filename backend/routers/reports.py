@@ -1,5 +1,11 @@
 """
 Reports router: generate traffic and device summary reports.
+
+Strategy:
+- For PPPoE/Hotspot stats:
+  * 'daily'  → live query to MikroTik (current session counts)
+  * 'weekly' / 'monthly' → read from daily_snapshots collection (historical data)
+    If no snapshots exist yet, falls back to live query + DB cache.
 """
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -51,8 +57,13 @@ async def generate_report(data: ReportRequest, user=Depends(get_current_user)):
         except Exception:
             tl = ""
         bw = h_item.get("bandwidth", {})
-        dl = sum(v.get("download_bps", 0) for v in bw.values())
-        ul = sum(v.get("upload_bps", 0) for v in bw.values())
+        isp_bw = h_item.get("isp_bandwidth", {})
+        if isp_bw:
+            dl = sum(v.get("download_bps", 0) for v in isp_bw.values() if isinstance(v, dict))
+            ul = sum(v.get("upload_bps", 0) for v in isp_bw.values() if isinstance(v, dict))
+        else:
+            dl = sum(v.get("download_bps", 0) for v in bw.values() if isinstance(v, dict))
+            ul = sum(v.get("upload_bps", 0) for v in bw.values() if isinstance(v, dict))
         trend.append({
             "time": tl, "download": round(dl / 1e6, 2), "upload": round(ul / 1e6, 2),
             "ping": h_item.get("ping_ms", 0), "jitter": h_item.get("jitter_ms", 0)
@@ -73,8 +84,13 @@ async def generate_report(data: ReportRequest, user=Depends(get_current_user)):
     for h_item in history:
         did = h_item.get("device_id", "")
         bw = h_item.get("bandwidth", {})
-        dl = sum(v.get("download_bps", 0) for v in bw.values())
-        ul = sum(v.get("upload_bps", 0) for v in bw.values())
+        isp_bw = h_item.get("isp_bandwidth", {})
+        if isp_bw:
+            dl = sum(v.get("download_bps", 0) for v in isp_bw.values() if isinstance(v, dict))
+            ul = sum(v.get("upload_bps", 0) for v in isp_bw.values() if isinstance(v, dict))
+        else:
+            dl = sum(v.get("download_bps", 0) for v in bw.values() if isinstance(v, dict))
+            ul = sum(v.get("upload_bps", 0) for v in bw.values() if isinstance(v, dict))
         dev_bw[did] = {"dl": round(dl / 1e6, 0), "ul": round(ul / 1e6, 0)}
 
     # Filter devices for summary (if specific device chosen)
@@ -150,29 +166,102 @@ async def generate_report(data: ReportRequest, user=Depends(get_current_user)):
     online_count = len(online_devs)
     uptime_pct = round((online_count / total_devs * 100) if total_devs > 0 else 100, 1)
 
-    # ── PPPoE & Hotspot active user count (query MikroTik per device) ──
+    # ── PPPoE & Hotspot stats ─────────────────────────────────────────────────
+    # Strategy:
+    # - daily   → live query ke MikroTik (akurat untuk saat ini)
+    # - weekly/monthly → baca dari daily_snapshots (data historis real)
+    #   Fallback: jika belum ada snapshot, gunakan live query atau DB cache
     pppoe_active = pppoe_total = hotspot_active = hotspot_total = 0
-    target_devs = report_devs if data.device_id else all_devs
-    for dev in target_devs:
-        if dev.get("status") != "online":
-            continue
-        try:
-            mt = get_api_client(dev)
-            # MT client sudah async — await langsung, tidak perlu asyncio.to_thread
-            results = await asyncio.gather(
-                mt.list_pppoe_secrets(),
-                mt.list_pppoe_active(),
-                mt.list_hotspot_users(),
-                mt.list_hotspot_active(),
-                return_exceptions=True
+    pppoe_trend = []   # trend harian PPPoE untuk chart laporan mingguan
+
+    if data.period == "daily":
+        # ── DAILY: Live query ke MikroTik ────────────────────────────────────
+        target_devs = report_devs if data.device_id else all_devs
+        for dev in target_devs:
+            if dev.get("status") != "online":
+                continue
+            try:
+                mt = get_api_client(dev)
+                results = await asyncio.gather(
+                    mt.list_pppoe_secrets(),
+                    mt.list_pppoe_active(),
+                    mt.list_hotspot_users(),
+                    mt.list_hotspot_active(),
+                    return_exceptions=True
+                )
+                secrets_res, active_res, hs_users_res, hs_active_res = results
+                pppoe_total    += len(secrets_res)    if isinstance(secrets_res,   list) else 0
+                pppoe_active   += len(active_res)     if isinstance(active_res,    list) else 0
+                hotspot_total  += len(hs_users_res)   if isinstance(hs_users_res,  list) else 0
+                hotspot_active += len(hs_active_res)  if isinstance(hs_active_res, list) else 0
+            except Exception as e:
+                logger.debug(f"PPPoE/Hotspot count failed for {dev.get('name')}: {e}")
+
+    else:
+        # ── WEEKLY / MONTHLY: Baca dari daily_snapshots collection ───────────
+        # Hitung berapa hari yang dibutuhkan
+        days_needed = 7 if data.period == "weekly" else 30
+
+        # Query snapshots dalam rentang waktu laporan
+        now_local = datetime.now() + timedelta(hours=0)  # server sudah WIB
+        snapshot_dates = []
+        for i in range(days_needed):
+            d = (now_local - timedelta(days=i)).strftime("%Y-%m-%d")
+            snapshot_dates.append(d)
+
+        snapshots = await db.daily_snapshots.find(
+            {"date": {"$in": snapshot_dates}},
+            {"_id": 0}
+        ).sort("date", 1).to_list(days_needed)
+
+        if snapshots:
+            # Gunakan snapshot untuk data historis
+            # Ambil nilai max dari semua snapshot (puncak tertinggi selama periode)
+            # dan rata-rata untuk ditampilkan di laporan
+            pppoe_total    = max((s.get("pppoe_total",    0) for s in snapshots), default=0)
+            pppoe_active   = max((s.get("pppoe_active",   0) for s in snapshots), default=0)
+            hotspot_total  = max((s.get("hotspot_total",  0) for s in snapshots), default=0)
+            hotspot_active = max((s.get("hotspot_active", 0) for s in snapshots), default=0)
+
+            # Buat trend harian PPPoE untuk chart
+            for snap in snapshots:
+                pppoe_trend.append({
+                    "date":           snap["date"],
+                    "pppoe_total":    snap.get("pppoe_total",    0),
+                    "pppoe_active":   snap.get("pppoe_active",   0),
+                    "hotspot_total":  snap.get("hotspot_total",  0),
+                    "hotspot_active": snap.get("hotspot_active", 0),
+                })
+
+            logger.info(
+                f"[report] Period={data.period}: menggunakan {len(snapshots)} snapshot historis. "
+                f"pppoe_total={pppoe_total}, pppoe_active={pppoe_active}"
             )
-            secrets_res, active_res, hs_users_res, hs_active_res = results
-            pppoe_total   += len(secrets_res)   if isinstance(secrets_res,   list) else 0
-            pppoe_active  += len(active_res)    if isinstance(active_res,    list) else 0
-            hotspot_total += len(hs_users_res)  if isinstance(hs_users_res,  list) else 0
-            hotspot_active += len(hs_active_res) if isinstance(hs_active_res, list) else 0
-        except Exception as e:
-            logger.debug(f"PPPoE/Hotspot count failed for {dev.get('name')}: {e}")
+        else:
+            # Belum ada snapshot historis — fallback ke DB cache (pppoe_active di device doc)
+            logger.warning(
+                f"[report] Tidak ada daily_snapshots untuk period={data.period}. "
+                "Fallback ke DB cache (pppoe_active dari device document)."
+            )
+            target_devs = report_devs if data.device_id else all_devs
+            for dev in target_devs:
+                if dev.get("status") != "online":
+                    continue
+                pppoe_active   += dev.get("pppoe_active",   0)
+                hotspot_active += dev.get("hotspot_active", 0)
+                # Untuk total: coba live query tapi dengan timeout pendek
+                try:
+                    mt = get_api_client(dev)
+                    results = await asyncio.gather(
+                        asyncio.wait_for(mt.list_pppoe_secrets(), timeout=10),
+                        asyncio.wait_for(mt.list_hotspot_users(), timeout=10),
+                        return_exceptions=True,
+                    )
+                    s_res, hs_res = results
+                    pppoe_total   += len(s_res)  if isinstance(s_res,  list) else 0
+                    hotspot_total += len(hs_res) if isinstance(hs_res, list) else 0
+                except Exception as e:
+                    logger.debug(f"Fallback live query failed for {dev.get('name')}: {e}")
 
     return {
         "label": label, "period": data.period,
@@ -183,6 +272,7 @@ async def generate_report(data: ReportRequest, user=Depends(get_current_user)):
         "engineer_name": data.engineer_name or "",
         "pppoe_stats": {"active": pppoe_active, "total": pppoe_total},
         "hotspot_stats": {"active": hotspot_active, "total": hotspot_total},
+        "pppoe_trend": pppoe_trend,   # trend harian PPPoE (kosong untuk daily)
         "summary": {
             "devices": {"total": total_devs, "online": online_count},
             "avg_bandwidth": {"download": avg_dl, "upload": avg_ul},
@@ -201,3 +291,17 @@ async def generate_report(data: ReportRequest, user=Depends(get_current_user)):
             "full_uptime_devices": sum(1 for d in all_devs if d.get("status") == "online"),
         },
     }
+
+
+@router.get("/snapshots")
+async def get_snapshots(days: int = 7, user=Depends(get_current_user)):
+    """Ambil daftar daily snapshots (untuk debugging / audit)."""
+    db = get_db()
+    now_local = datetime.now()
+    dates = [(now_local - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(days)]
+    snaps = await db.daily_snapshots.find(
+        {"date": {"$in": dates}},
+        {"_id": 0, "date": 1, "pppoe_total": 1, "pppoe_active": 1,
+         "hotspot_total": 1, "hotspot_active": 1, "devices_online": 1, "timestamp": 1}
+    ).sort("date", -1).to_list(days)
+    return {"snapshots": snaps, "dates_queried": dates}
