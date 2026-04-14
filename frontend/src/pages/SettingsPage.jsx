@@ -864,20 +864,55 @@ function CompanyProfileSection() {
   );
 }
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 export default function SettingsPage() {
   return (
-    <div className="space-y-4 pb-16" data-testid="settings-page">
-      <div>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Pengaturan</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">Pengaturan tampilan, koneksi VPN, dan manajemen data</p>
+    <div className="space-y-6 pb-16" data-testid="settings-page">
+      <div className="pb-4 border-b border-border/50">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Pengaturan & Konfigurasi</h1>
+        <p className="text-sm text-muted-foreground">Kelola preferensi aplikasi, profil perusahaan, jaringan VPN, dan pencadangan data sistem NOC Sentinel.</p>
       </div>
-      <ThemeSection />
-      <CompanyProfileSection />
-      <BankAccountSection />
-      <SnmpPollingSection />
-      <DeviceBackupSection />
-      <SstpSection />
-      <L2tpSection />
+      
+      <Tabs defaultValue="general" className="flex flex-col md:flex-row gap-6 md:gap-8">
+        <TabsList className="flex md:flex-col justify-start items-start bg-transparent space-x-2 md:space-x-0 md:space-y-1 p-0 h-auto w-full md:w-56 flex-wrap overflow-x-auto ring-0">
+          <TabsTrigger value="general" className="w-full justify-start py-2 px-3 font-medium transition-all text-muted-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-muted/50 rounded-md">
+            <Palette className="w-4 h-4 mr-2" /> Umum & Tampilan
+          </TabsTrigger>
+          <TabsTrigger value="company" className="w-full justify-start py-2 px-3 font-medium transition-all text-muted-foreground data-[state=active]:bg-orange-500/10 data-[state=active]:text-orange-500 data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-muted/50 rounded-md">
+            <Building className="w-4 h-4 mr-2" /> Profil Perusahaan
+          </TabsTrigger>
+          <TabsTrigger value="vpn" className="w-full justify-start py-2 px-3 font-medium transition-all text-muted-foreground data-[state=active]:bg-purple-500/10 data-[state=active]:text-purple-500 data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-muted/50 rounded-md">
+            <Wifi className="w-4 h-4 mr-2" /> Koneksi VPN
+          </TabsTrigger>
+          <TabsTrigger value="polling" className="w-full justify-start py-2 px-3 font-medium transition-all text-muted-foreground data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-500 data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-muted/50 rounded-md">
+            <RefreshCw className="w-4 h-4 mr-2" /> SNMP Polling
+          </TabsTrigger>
+          <TabsTrigger value="backup" className="w-full justify-start py-2 px-3 font-medium transition-all text-muted-foreground data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-500 data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-muted/50 rounded-md">
+            <Database className="w-4 h-4 mr-2" /> Backup & Restore
+          </TabsTrigger>
+        </TabsList>
+        
+        <div className="flex-1 min-w-0 max-w-4xl">
+          <TabsContent value="general" className="mt-0 space-y-6">
+            <ThemeSection />
+          </TabsContent>
+          <TabsContent value="company" className="mt-0 space-y-6">
+            <CompanyProfileSection />
+            <BankAccountSection />
+          </TabsContent>
+          <TabsContent value="vpn" className="mt-0 space-y-6">
+            <SstpSection />
+            <L2tpSection />
+          </TabsContent>
+          <TabsContent value="polling" className="mt-0 space-y-6">
+            <SnmpPollingSection />
+          </TabsContent>
+          <TabsContent value="backup" className="mt-0 space-y-6">
+            <DeviceBackupSection />
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }

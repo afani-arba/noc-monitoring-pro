@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, lazy, Suspense } from "
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "sonner";
 import api from "@/lib/api";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 // ── Auth Context ──────────────────────────────────────────────────────────────
 const AuthContext = createContext(null);
@@ -180,43 +181,45 @@ function AuthProvider({ children }) {
 // ── Root App ──────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Toaster position="bottom-right" richColors />
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Public */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/wall" element={<WallDisplayPage />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Toaster position="bottom-right" richColors />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Public */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/wall" element={<WallDisplayPage />} />
 
-            {/* Protected */}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<AdminLayout />}>
-                <Route path="/admin" element={<DashboardPage />} />
-                <Route path="/admin/devices" element={<DevicesPage />} />
-                <Route path="/admin/sla" element={<SLAPage />} />
-                <Route path="/admin/incidents" element={<IncidentsPage />} />
-                <Route path="/admin/reports" element={<ReportsPage />} />
-                <Route path="/admin/topology" element={<TopologyPage />} />
-                <Route path="/admin/ping" element={<PingToolPage />} />
-                <Route path="/admin/syslog" element={<SyslogPage />} />
-                <Route path="/admin/backups" element={<BackupsPage />} />
-                <Route path="/admin/scheduler" element={<SchedulerPage />} />
-                <Route path="/admin/notifications" element={<NotificationsPage />} />
-                <Route path="/admin/audit" element={<AuditLogPage />} />
-                <Route path="/admin/settings" element={<SettingsPage />} />
-                <Route path="/admin/users" element={<AdminPage />} />
-                <Route path="/admin/license" element={<LicensePage />} />
-                <Route path="/admin/update" element={<UpdatePage />} />
+              {/* Protected */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<AdminLayout />}>
+                  <Route path="/admin" element={<DashboardPage />} />
+                  <Route path="/admin/devices" element={<DevicesPage />} />
+                  <Route path="/admin/sla" element={<SLAPage />} />
+                  <Route path="/admin/incidents" element={<IncidentsPage />} />
+                  <Route path="/admin/reports" element={<ReportsPage />} />
+                  <Route path="/admin/topology" element={<TopologyPage />} />
+                  <Route path="/admin/ping" element={<PingToolPage />} />
+                  <Route path="/admin/syslog" element={<SyslogPage />} />
+                  <Route path="/admin/backups" element={<BackupsPage />} />
+                  <Route path="/admin/scheduler" element={<SchedulerPage />} />
+                  <Route path="/admin/notifications" element={<NotificationsPage />} />
+                  <Route path="/admin/audit" element={<AuditLogPage />} />
+                  <Route path="/admin/settings" element={<SettingsPage />} />
+                  <Route path="/admin/users" element={<AdminPage />} />
+                  <Route path="/admin/license" element={<LicensePage />} />
+                  <Route path="/admin/update" element={<UpdatePage />} />
+                </Route>
               </Route>
-            </Route>
 
-            {/* Fallback */}
-            <Route path="/" element={<Navigate to="/admin" replace />} />
-            <Route path="*" element={<Navigate to="/admin" replace />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </AuthProvider>
+              {/* Fallback */}
+              <Route path="/" element={<Navigate to="/admin" replace />} />
+              <Route path="*" element={<Navigate to="/admin" replace />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
