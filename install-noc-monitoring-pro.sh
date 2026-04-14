@@ -85,7 +85,7 @@ rm -f /etc/apt/sources.list.d/docker.list
 apt-get update -qq || true
 apt-get install -y -qq curl wget git nano ufw \
     ca-certificates gnupg lsb-release \
-    net-tools dnsutils iputils-ping > /dev/null 2>&1
+    net-tools dnsutils iputils-ping python3 > /dev/null 2>&1
 ok "Paket sistem OK"
 
 # ══════════════════════════════════════════════════════════════════════════════
