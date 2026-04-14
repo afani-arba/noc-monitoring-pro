@@ -139,7 +139,12 @@ async def login(data: UserLogin, request: Request = None):
     except Exception:
         pass
 
-    return {"token": create_token(user), "user": {k: v for k, v in user.items() if k != "password"}}
+    jwt_str = create_token(user)
+    return {
+        "token": jwt_str,
+        "access_token": jwt_str, 
+        "user": {k: v for k, v in user.items() if k != "password"}
+    }
 
 
 

@@ -214,8 +214,8 @@ function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     const res = await api.post("/auth/login", { username, password });
-    const { access_token, user: userData } = res.data;
-    localStorage.setItem("noc_token", access_token);
+    const { access_token, token, user: userData } = res.data;
+    localStorage.setItem("noc_token", access_token || token);
     localStorage.setItem("noc_user", JSON.stringify(userData));
     setUser(userData);
     return userData;
