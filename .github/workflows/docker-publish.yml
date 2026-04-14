@@ -63,8 +63,7 @@ jobs:
           context: ./frontend
           push: true
           tags: ${{ steps.tags.outputs.frontend_tags }}
-          cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:latest
-          cache-to: type=inline
+          no-cache: true
           build-args: |
             APP_COMMIT_SHA=${{ steps.tags.outputs.short_sha }}
             REACT_APP_EDITION=monitoring_pro
