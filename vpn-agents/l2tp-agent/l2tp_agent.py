@@ -93,11 +93,16 @@ length bit = yes
     ppp_options = f"""
 noauth
 proxyarp
-name {username}
-password {password}
+name "{username}"
+password "{password}"
 noipdefault
 nodefaultroute
 usepeerdns
+require-mschap-v2
+refuse-eap
+refuse-pap
+refuse-chap
+refuse-mschap
 # unit 10
 """
     try:
