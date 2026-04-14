@@ -24,8 +24,8 @@ RUN npm run build
 FROM nginx:alpine
 # Menghapus konfigurasi default nginx
 RUN rm -rf /usr/share/nginx/html/*
-# Vite output ke /dist bukan /build
-COPY --from=build /app/dist /usr/share/nginx/html
+# Vite output ke /build (sesuai vite.config.js: outDir: 'build')
+COPY --from=build /app/build /usr/share/nginx/html
 # Konfigurasi routing Nginx (SPA support)
 COPY nginx-custom.conf /etc/nginx/conf.d/default.conf
 
