@@ -1,9 +1,14 @@
-# Tahap 1: Build React App
-FROM node:20 AS build
+# Tahap 1: Build React App (Vite)
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# Konfigurasi build agar Vite mengerti ini jalan di Docker
+ARG APP_COMMIT_SHA=dev
+ARG REACT_APP_EDITION=monitoring_pro
+ARG REACT_APP_PRODUCT_NAME="NOC Monitoring Pro"
+
 ENV VITE_API_URL=/api
+ENV VITE_EDITION=${REACT_APP_EDITION}
+ENV VITE_PRODUCT_NAME=${REACT_APP_PRODUCT_NAME}
 ENV GENERATE_SOURCEMAP=false
 ENV CI=false
 ENV DISABLE_ESLINT_PLUGIN=true
@@ -19,9 +24,9 @@ RUN npm run build
 FROM nginx:alpine
 # Menghapus konfigurasi default nginx
 RUN rm -rf /usr/share/nginx/html/*
-# Menyalin hasil build dari tahap 1
-COPY --from=build /app/build /usr/share/nginx/html
-# Menyalin konfigurasi routing Nginx
+# Vite output ke /dist bukan /build
+COPY --from=build /app/dist /usr/share/nginx/html
+# Konfigurasi routing Nginx (SPA support)
 COPY nginx-custom.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
