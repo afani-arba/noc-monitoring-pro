@@ -27,7 +27,7 @@ class L2TPConfigSchema(BaseModel):
 async def get_l2tp_config(user=Depends(get_current_user)):
     """Mengambil konfigurasi L2TP client system"""
     db = get_db()
-    curr = await db.settings.find_one({"_id": "l2tp_config"})
+    curr = await db.system_settings.find_one({"_id": "l2tp_config"})
     if not curr:
         return {"server": "", "username": "", "password": "", "enabled": False, "auto_routes": ""}
     return {
@@ -47,7 +47,7 @@ async def update_l2tp_config(config: L2TPConfigSchema, user=Depends(require_writ
         raise HTTPException(status_code=400, detail="Server, Username dan Password harus diisi")
 
     # Simpan ke DB
-    await db.settings.update_one(
+    await db.system_settings.update_one(
         {"_id": "l2tp_config"},
         {"$set": {
             "server": config.server,
@@ -79,7 +79,7 @@ async def update_l2tp_config(config: L2TPConfigSchema, user=Depends(require_writ
 async def get_l2tp_status(user=Depends(get_current_user)):
     """Mengambil status interface L2TP dari agent di host."""
     db = get_db()
-    curr = await db.settings.find_one({"_id": "l2tp_config"})
+    curr = await db.system_settings.find_one({"_id": "l2tp_config"})
     if not curr or not curr.get("enabled", False):
         return {"status": "disabled", "message": "L2TP client tidak aktif."}
 
@@ -94,5 +94,5 @@ async def disconnect_l2tp(user=Depends(require_write)):
     ok, msg = await l2tp_svc.l2tp_down()
     # Update DB agar enabled=false juga
     db = get_db()
-    await db.settings.update_one({"_id": "l2tp_config"}, {"$set": {"enabled": False}})
+    await db.system_settings.update_one({"_id": "l2tp_config"}, {"$set": {"enabled": False}})
     return {"status": "ok", "message": msg}

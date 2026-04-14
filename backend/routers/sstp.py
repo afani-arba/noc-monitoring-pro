@@ -53,7 +53,7 @@ async def _agent_post(path: str, data: dict = None) -> dict:
 async def get_sstp_config():
     """Mengambil konfigurasi SSTP client system"""
     db = get_db()
-    curr = await db.settings.find_one({"_id": "sstp_config"})
+    curr = await db.system_settings.find_one({"_id": "sstp_config"})
     if not curr:
         return {"server": "", "username": "", "password": "", "enabled": False}
     return {
@@ -73,7 +73,7 @@ async def update_sstp_config(config: SSTPConfigSchema):
         raise HTTPException(status_code=400, detail="Server, Username dan Password harus diisi")
 
     # Simpan ke DB
-    await db.settings.update_one(
+    await db.system_settings.update_one(
         {"_id": "sstp_config"},
         {"$set": {
             "server": config.server,
@@ -106,7 +106,7 @@ async def update_sstp_config(config: SSTPConfigSchema):
 async def get_sstp_status():
     """Mengambil status interface SSTP dari agent di host."""
     db = get_db()
-    curr = await db.settings.find_one({"_id": "sstp_config"})
+    curr = await db.system_settings.find_one({"_id": "sstp_config"})
     if not curr or not curr.get("enabled", False):
         return {"status": "disabled", "message": "SSTP client tidak aktif."}
 
@@ -122,7 +122,7 @@ async def disconnect_sstp():
     result = await _agent_post("/disconnect")
     # Update DB agar enabled=false juga
     db = get_db()
-    await db.settings.update_one({"_id": "sstp_config"}, {"$set": {"enabled": False}})
+    await db.system_settings.update_one({"_id": "sstp_config"}, {"$set": {"enabled": False}})
     return {"status": "ok", "message": result.get("message", "Disconnected")}
 
 

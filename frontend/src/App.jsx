@@ -203,7 +203,7 @@ function AuthProvider({ children }) {
   // Fetch edition info from backend on mount
   useEffect(() => {
     if (!user) return;
-    api.get("/system/edition").then(res => {
+    api.get("/edition").then(res => {
       setEditionData({
         edition: res.data.edition || "monitoring_pro",
         edition_name: res.data.edition_name || "NOC-Monitoring-Pro",
