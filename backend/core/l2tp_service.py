@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 # ── L2TP Agent berjalan di HOST Ubuntu (port 8002) ───────────────────
 # Docker gateway = 172.18.0.1 (default bridge)
 AGENT_URL = os.environ.get("L2TP_AGENT_URL", "http://172.18.0.1:8002")
-AGENT_TIMEOUT = 15.0
+AGENT_TIMEOUT = 60.0
 
 async def _agent_get(path: str) -> Dict[str, Any]:
     """Async HTTP GET ke L2TP Agent."""

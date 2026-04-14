@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 # 172.18.0.1 = IP host dari dalam bridge network Docker (docker gateway).
 # Agent listen di 0.0.0.0:8001 di host → bisa diakses dari container.
 AGENT_URL = os.environ.get("SSTP_AGENT_URL", "http://172.18.0.1:8001")
-AGENT_TIMEOUT = 15.0  # detik
+AGENT_TIMEOUT = 60.0  # detik
 
 
 def _agent_get(path: str) -> Dict[str, Any]:
