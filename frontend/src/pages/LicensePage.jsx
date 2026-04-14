@@ -31,6 +31,13 @@ export default function LicensePage() {
     }
   };
 
+  // Helper: dapatkan format key yang benar berdasarkan edisi
+  const getExpectedFormat = () => {
+    if (edition === 'enterprise') return 'ArBa-ENT-XXXX-XXXX';
+    if (edition === 'monitoring_pro') return 'ArBa-MP-XXXX-XXXX';
+    return 'ArBa-Pro-XXXX-XXXX';
+  };
+
   const handleActivate = async (e) => {
     e.preventDefault();
     const key = keyInput.trim();
@@ -38,11 +45,17 @@ export default function LicensePage() {
     // ── LAYER 1: Validasi format client-side ───────────────────────────────────
     const proPattern  = /^ArBa-Pro-[A-F0-9]{4}-[A-F0-9]{4}$/i;
     const entPattern  = /^ArBa-ENT-[A-F0-9]{4}-[A-F0-9]{4}$/i;
+    const mpPattern   = /^ArBa-MP-[A-F0-9]{4}-[A-F0-9]{4}$/i;  // Monitoring Pro
+    const blPattern   = /^ArBa-BL-[A-F0-9]{4}-[A-F0-9]{4}$/i;  // Billing Lite
+    const bpPattern   = /^ArBa-BP-[A-F0-9]{4}-[A-F0-9]{4}$/i;  // Billing Pro
     const legacyNOC   = /^NOC-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}$/i;  // Support key lama
 
-    if (!proPattern.test(key) && !entPattern.test(key) && !legacyNOC.test(key)) {
+    const isValidFormat = proPattern.test(key) || entPattern.test(key) ||
+      mpPattern.test(key) || blPattern.test(key) || bpPattern.test(key) || legacyNOC.test(key);
+
+    if (!isValidFormat) {
       toast.error(
-        `Format key tidak valid. Gunakan: ${edition === 'enterprise' ? 'ArBa-ENT-XXXX-XXXX' : 'ArBa-Pro-XXXX-XXXX'}`,
+        `Format key tidak valid. Gunakan: ${getExpectedFormat()}`,
         { duration: 5000 }
       );
       return;
@@ -54,6 +67,16 @@ export default function LicensePage() {
         "Anda menggunakan NOC-Sentinel Enterprise. " +
         "Lisensi Pro (ArBa-Pro-...) tidak dapat digunakan di sini. " +
         "Hubungi admin untuk mendapatkan lisensi ArBa-ENT-XXXX-XXXX.",
+        { duration: 7000 }
+      );
+      return;
+    }
+
+    if (edition === "monitoring_pro" && !mpPattern.test(key) && !legacyNOC.test(key)) {
+      toast.error(
+        "Anda menggunakan NOC-Monitoring Pro. " +
+        "Hanya lisensi ArBa-MP-XXXX-XXXX yang dapat digunakan di sini. " +
+        "Hubungi admin untuk mendapatkan lisensi Monitoring Pro.",
         { duration: 7000 }
       );
       return;
@@ -167,9 +190,13 @@ export default function LicensePage() {
               <span className={`text-xs font-bold px-2 py-1 rounded ${
                 (data?.edition || 'pro') === 'enterprise'
                   ? 'bg-cyan-500/10 text-cyan-400'
+                  : (data?.edition || 'pro') === 'monitoring_pro'
+                  ? 'bg-purple-500/10 text-purple-400'
                   : 'bg-blue-500/10 text-blue-400'
               }`}>
-                {(data?.edition || 'pro') === 'enterprise' ? '⚡ Enterprise' : '🔵 Pro'}
+                {(data?.edition || 'pro') === 'enterprise' ? '⚡ Enterprise'
+                  : (data?.edition || 'pro') === 'monitoring_pro' ? '📡 Monitoring Pro'
+                  : '🔵 Pro'}
               </span>
             </div>
 
@@ -211,18 +238,19 @@ export default function LicensePage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">License Key</label>
                 <Input 
-                  placeholder={edition === 'enterprise' ? 'ArBa-ENT-XXXX-XXXX' : 'ArBa-Pro-XXXX-XXXX'}
+                  placeholder={getExpectedFormat()}
                   value={keyInput}
                   onChange={e => setKeyInput(e.target.value)}
                   className="font-mono"
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  Format untuk edisi ini: <code className="text-primary font-mono text-xs">{
-                    edition === 'enterprise' ? 'ArBa-ENT-XXXX-XXXX' : 'ArBa-Pro-XXXX-XXXX'
-                  }</code>
+                  Format untuk edisi ini: <code className="text-primary font-mono text-xs">{getExpectedFormat()}</code>
                   {edition === 'enterprise' && (
                     <span className="text-yellow-500 ml-1">— Key Pro tidak dapat digunakan di Edisi Enterprise</span>
+                  )}
+                  {edition === 'monitoring_pro' && (
+                    <span className="text-yellow-500 ml-1">— Hanya key ArBa-MP yang dapat digunakan di Monitoring Pro</span>
                   )}
                 </p>
               </div>
