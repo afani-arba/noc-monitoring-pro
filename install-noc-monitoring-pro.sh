@@ -81,7 +81,8 @@ ok "Konfigurasi siap"
 step "STEP 1/6 — Dependensi Sistem"
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
+rm -f /etc/apt/sources.list.d/docker.list
+apt-get update -qq || true
 apt-get install -y -qq curl wget git nano ufw \
     ca-certificates gnupg lsb-release \
     net-tools dnsutils iputils-ping > /dev/null 2>&1
