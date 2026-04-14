@@ -89,7 +89,7 @@ services:
   # 2. NOC MONITORING PRO — FRONTEND
   # ═════════════════════════════════════════════════════════════════
   noc-frontend:
-    image: ghcr.io/afani-arba/noc-sentinel-v3-frontend:latest
+    image: ghcr.io/afani-arba/noc-monitoring-pro-frontend:latest
     container_name: noc-monitoring-pro-frontend
     restart: always
     logging: *default-logging
