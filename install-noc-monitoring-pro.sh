@@ -213,8 +213,23 @@ if [[ "$SKIP_ENV" == false && -n "$GHCR_TOKEN" ]]; then
 fi
 
 cd "$APP_DIR"
+cd "$APP_DIR"
 docker compose pull --quiet 2>/dev/null && ok "Images di-pull" || \
     warn "Pull gagal — jalankan manual: cd $APP_DIR && docker compose pull"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 5B: Install VPN Agents (Native di Host)
+# ══════════════════════════════════════════════════════════════════════════════
+step "STEP 5B/6 — Menginstall VPN Agents (L2TP & SSTP)"
+if [[ -d "$APP_DIR/vpn-agents" ]]; then
+    info "Menginstall L2TP Agent..."
+    cd "$APP_DIR/vpn-agents/l2tp-agent" && bash install_l2tp_agent.sh > /dev/null 2>&1 || warn "Gagal install L2TP Agent"
+    
+    info "Menginstall SSTP Agent..."
+    cd "$APP_DIR/vpn-agents/sstp-agent" && bash install_sstp_agent.sh > /dev/null 2>&1 || warn "Gagal install SSTP Agent"
+    
+    ok "VPN Agents (L2TP/SSTP) terinstall dan berjalan di background"
+fi
 
 # ══════════════════════════════════════════════════════════════════════════════
 # STEP 6: Start NOC Monitoring Pro
