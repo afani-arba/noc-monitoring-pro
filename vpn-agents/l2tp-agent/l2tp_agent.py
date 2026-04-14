@@ -131,7 +131,6 @@ password "{password}"
 noipdefault
 nodefaultroute
 usepeerdns
-require-mschap-v2
 refuse-eap
 refuse-pap
 refuse-chap
