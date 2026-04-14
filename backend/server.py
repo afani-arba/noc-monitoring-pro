@@ -69,7 +69,8 @@ from routers.routing_alerts import router as routing_alerts_router
 from routers.syslog import router as syslog_router
 from routers.audit import router as audit_router
 from routers.scheduler import router as scheduler_router
-
+from routers.sstp import router as sstp_router
+from routers.l2tp import router as l2tp_router
 _background_tasks: list = []
 
 
@@ -338,6 +339,10 @@ api.include_router(syslog_router)
 api.include_router(audit_router)
 api.include_router(scheduler_router)
 api.include_router(routing_alerts_router)
+
+# ── VPN Clients ───────────────────────────────────────────────────────────
+api.include_router(sstp_router)
+api.include_router(l2tp_router)
 
 app.include_router(api)
 
