@@ -94,6 +94,23 @@ async def lifespan(app: FastAPI):
         await db.sla_records.create_index([("device_id", 1), ("timestamp", -1)], background=True)
         await db.incidents.create_index([("device_id", 1), ("created_at", -1)], background=True)
         logger.info("MongoDB indexes verified.")
+
+        # Ensure default admin user exists
+        admin_count = await db.admin_users.count_documents({"username": "admin"})
+        if admin_count == 0:
+            from core.auth import pwd_context
+            import uuid
+            default_admin = {
+                "id": str(uuid.uuid4()),
+                "username": "admin",
+                "password": pwd_context.hash("admin123"),
+                "full_name": "Administrator",
+                "role": "administrator",
+                "is_active": True,
+            }
+            await db.admin_users.insert_one(default_admin)
+            logger.info("✅ Default admin user created (admin / admin123)")
+
     except Exception as e:
         logger.error(f"DB init error: {e}")
 
