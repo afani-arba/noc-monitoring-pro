@@ -52,7 +52,7 @@ READONLY_ROLES   = {"super_admin", "administrator", "noc_engineer", "billing_sta
 ALL_SERVICES = [
     "dashboard", "pppoe", "hotspot", "reports", "devices",
     "bgp", "routing", "sdwan", "traffic_flow", "genieacs",
-    "wallboard", "bandwidth", "topology", "sla", "incidents",
+    "wallboard", "bandwidth", "sla", "incidents",
     "peering_eye", "looking_glass", "netwatch",
     "billing", "hotspot_billing", "finance_report",
     "notifications", "backups", "scheduler", "syslog",
@@ -67,7 +67,7 @@ ROLE_DEFAULT_SERVICES = {
     "noc_engineer":   [
         "dashboard", "pppoe", "hotspot", "reports", "devices",
         "bgp", "routing", "sdwan", "genieacs",
-        "wallboard", "topology", "sla", "incidents",
+        "wallboard", "sla", "incidents",
         "peering_eye", "ping", "audit",
     ],
     "billing_staff":  [
@@ -81,7 +81,7 @@ ROLE_DEFAULT_SERVICES = {
     ],
     "viewer":         [
         "dashboard", "pppoe", "hotspot", "reports",
-        "wallboard", "topology", "sla", "incidents", "ping",
+        "wallboard", "sla", "incidents", "ping",
     ],
 }
 
@@ -169,7 +169,7 @@ async def require_noc(request: Request, user=Depends(get_current_user)):
     if user.get("role") not in NOC_ROLES:
         explicit = user.get("allowed_services")
         if explicit is not None:
-             noc_services = {"dashboard", "pppoe", "hotspot", "reports", "devices", "bgp", "routing", "sdwan", "genieacs", "wallboard", "topology", "sla", "incidents", "peering_eye", "ping"}
+             noc_services = {"dashboard", "pppoe", "hotspot", "reports", "devices", "bgp", "routing", "sdwan", "genieacs", "wallboard", "sla", "incidents", "peering_eye", "ping"}
              if set(explicit) & noc_services:
                  return user
         raise HTTPException(

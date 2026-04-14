@@ -7,7 +7,7 @@ Features:
   2.  Device Management
   3.  Wall Display
   4.  Data Report
-  5.  Device Hub (Topology + Ping Tool)
+  5.  Device Hub (Ping Tool)
   6.  SLA Monitor
   7.  Incident Management
   8.  Backup Config
@@ -55,7 +55,6 @@ from routers.metrics import router as metrics_router
 from routers.events import router as events_router
 from routers.wallboard import router as wallboard_router
 from routers.reports import router as reports_router
-from routers.topology import router as topology_router
 from routers.network_tools import router as network_tools_router
 from routers.sla import router as sla_router
 from routers.incidents import router as incidents_router
@@ -290,7 +289,6 @@ async def get_edition_info():
             "wall_display": True,
             "data_report": True,
             "device_hub": True,
-            "topology": True,
             "ping_tool": True,
             "sla": True,
             "incidents": True,
@@ -329,8 +327,7 @@ api.include_router(devices_router)
 # ── 4. Data Report ────────────────────────────────────────────────────────
 api.include_router(reports_router)
 
-# ── 5. Device Hub (Topology + Ping Tool) ─────────────────────────────────
-api.include_router(topology_router)
+# ── 5. Device Hub (Ping Tool) ────────────────────────────────────────────
 api.include_router(network_tools_router)
 
 # ── 6. SLA Monitor ────────────────────────────────────────────────────────

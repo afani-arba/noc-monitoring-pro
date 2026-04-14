@@ -5,7 +5,7 @@ import api from "@/lib/api";
 import { ThemeProvider } from "@/context/ThemeContext";
 import {
   LayoutDashboard, Monitor, Server, BarChart2, AlertTriangle, FileText, 
-  GitBranch, Activity, Terminal, HardDrive, CalendarClock, Bell, Search, 
+  Activity, Terminal, HardDrive, CalendarClock, Bell, Search, 
   Settings, Users, Key, RefreshCw, Radio
 } from "lucide-react";
 // ── Auth Context ──────────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ const AdminPage         = lazy(() => import("@/pages/AdminPage"));
 const LicensePage       = lazy(() => import("@/pages/LicensePage"));
 const UpdatePage        = lazy(() => import("@/pages/UpdatePage"));
 const WallDisplayPage   = lazy(() => import("@/pages/WallDisplayPage"));
-const TopologyPage      = lazy(() => import("@/pages/TopologyPage"));
+
 const PingToolPage      = lazy(() => import("@/pages/PingToolPage"));
 const SyslogPage        = lazy(() => import("@/pages/SyslogPage"));
 const AuditLogPage      = lazy(() => import("@/pages/AuditLogPage"));
@@ -94,7 +94,7 @@ function AdminLayout() {
             { to: "/admin/sla", label: "SLA Monitor", icon: BarChart2 },
             { to: "/admin/incidents", label: "Insiden", icon: AlertTriangle },
             { to: "/admin/reports", label: "Laporan", icon: FileText },
-            { to: "/admin/topology", label: "Topologi", icon: GitBranch },
+
             { to: "/admin/ping", label: "Ping Tool", icon: Activity },
             { to: "/admin/syslog", label: "Syslog", icon: Terminal },
             { to: "/admin/backups", label: "Backup", icon: HardDrive },
@@ -258,7 +258,7 @@ export default function App() {
                   <Route path="/admin/sla" element={<SLAPage />} />
                   <Route path="/admin/incidents" element={<IncidentsPage />} />
                   <Route path="/admin/reports" element={<ReportsPage />} />
-                  <Route path="/admin/topology" element={<TopologyPage />} />
+
                   <Route path="/admin/ping" element={<PingToolPage />} />
                   <Route path="/admin/syslog" element={<SyslogPage />} />
                   <Route path="/admin/backups" element={<BackupsPage />} />

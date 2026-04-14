@@ -43,7 +43,7 @@ const roleConfig = {
 const SERVICE_CATEGORIES = [
   {
     label: "🖥️ Monitoring Utama",
-    services: ["dashboard", "wallboard", "sla", "incidents", "topology", "ping"],
+    services: ["dashboard", "wallboard", "sla", "incidents", "ping"],
   },
   {
     label: "📡 Pelanggan & Jaringan",
@@ -69,7 +69,7 @@ const SERVICE_CATEGORIES = [
 
 const SERVICE_LABELS = {
   dashboard: "Dashboard", wallboard: "Wall Display",
-  sla: "SLA Monitor", incidents: "Incidents", topology: "Network Map",
+  sla: "SLA Monitor", incidents: "Incidents",
   pppoe: "PPPoE Users", hotspot: "Hotspot Users", reports: "Reports",
   devices: "Devices", genieacs: "GenieACS / TR-069",
   bgp: "BGP Peers", routing: "OSPF / Routes", sdwan: "Load Balance",

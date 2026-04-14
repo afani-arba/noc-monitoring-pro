@@ -45,7 +45,6 @@ const navItems = [
   // ── NOC & INFRASTRUCTURE ──
   { separator: true, label: "NOC Infrastructure", nocOnly: false /* some are visible to helpdesk */ },
   { to: "/devices",        icon: Server,          label: "Devices Hub",            serviceKey: "devices",        nocOnly: true },
-  { to: "/topology",       icon: GitBranch,       label: "Network Map",            serviceKey: "topology" },
 
   { to: "/ping",           icon: Activity,        label: "Network Ping Tool",      serviceKey: "ping" },
   { to: "/sla",            icon: BarChart2,       label: "SLA Monitor",            serviceKey: "sla" },

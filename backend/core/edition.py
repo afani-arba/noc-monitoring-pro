@@ -48,7 +48,6 @@ FEATURES: dict = {
     "bandwidth":          True,
     "sla":                True,
     "incidents":          True,
-    "topology":           True,
     "wallboard":          True,
     "bgp":                True,
     "routing":            True,
