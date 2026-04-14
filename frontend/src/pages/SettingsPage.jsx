@@ -34,9 +34,16 @@ function SstpSection() {
     setSaving(true);
     try {
       const r = await api.put("/sstp/config", { ...cfg, enabled: true });
-      toast.success(r.data.message || "SSTP VPN berhasil disambungkan!");
-      setCfg(c => ({ ...c, enabled: true }));
-      setTimeout(fetchStatus, 3000);
+      if (r.data.status === "success") {
+        toast.success(r.data.message || "SSTP VPN berhasil disambungkan!");
+        setCfg(c => ({ ...c, enabled: true }));
+        setTimeout(fetchStatus, 3000);
+      } else if (r.data.status === "agent_error") {
+        toast.error(r.data.message || "SSTP Agent tidak tersedia", { duration: 8000 });
+        setCfg(c => ({ ...c, enabled: false }));
+      } else {
+        toast.warning(r.data.message || "SSTP: respons tidak diketahui");
+      }
     } catch (e) {
       toast.error(e.response?.data?.detail || "Gagal menyambungkan SSTP VPN");
     }
@@ -245,9 +252,17 @@ function L2tpSection() {
     setSaving(true);
     try {
       const r = await api.put("/l2tp/config", { ...cfg, enabled: true });
-      toast.success(r.data.message || "L2TP VPN berhasil disambungkan!");
-      setCfg(c => ({ ...c, enabled: true }));
-      setTimeout(fetchStatus, 3000);
+      if (r.data.status === "success") {
+        toast.success(r.data.message || "L2TP VPN berhasil disambungkan!");
+        setCfg(c => ({ ...c, enabled: true }));
+        setTimeout(fetchStatus, 3000);
+      } else if (r.data.status === "agent_error") {
+        // Agent belum terinstall di host — tampilkan pesan informatif
+        toast.error(r.data.message || "L2TP Agent tidak tersedia", { duration: 8000 });
+        setCfg(c => ({ ...c, enabled: false }));
+      } else {
+        toast.warning(r.data.message || "L2TP: respons tidak diketahui");
+      }
     } catch (e) {
       toast.error(e.response?.data?.detail || "Gagal menyambungkan L2TP VPN");
     }
