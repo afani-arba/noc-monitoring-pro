@@ -1,0 +1,175 @@
+# NOC-Monitoring-Pro — docker-compose.yml
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  NOC-Monitoring-Pro                                                       ║
+# ║  Edition  : MONITORING PRO (Network Monitoring — tanpa Billing)           ║
+# ║  Services : Backend, Frontend, MongoDB, noc-updater                       ║
+# ║                                                                           ║
+# ║  Fitur Aktif:                                                             ║
+# ║    1.  Dashboard Interface                                                ║
+# ║    2.  Device Management                                                  ║
+# ║    3.  Wall Display                                                       ║
+# ║    4.  Data Report                                                        ║
+# ║    5.  Device Hub (Topology + Ping Tool)                                  ║
+# ║    6.  SLA Monitor                                                        ║
+# ║    7.  Incident Management                                                ║
+# ║    8.  Backup Config                                                      ║
+# ║    9.  Notifikasi System                                                  ║
+# ║    10. Pengaturan Platform                                                ║
+# ║    11. User Management                                                    ║
+# ║    12. Update Aplikasi                                                    ║
+# ║    13. Lisensi Sistem                                                     ║
+# ║                                                                           ║
+# ║  PORT MAPPING (tidak konflik dengan master & produk lain):                ║
+# ║    Frontend    : 8083                                                     ║
+# ║    Backend API : 8003                                                     ║
+# ║    Syslog UDP  : 5143                                                     ║
+# ║                                                                           ║
+# ║  Usage:                                                                   ║
+# ║    docker compose pull && docker compose up -d                            ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+  # ═════════════════════════════════════════════════════════════════
+  # 1. NOC MONITORING PRO — BACKEND
+  # ═════════════════════════════════════════════════════════════════
+  noc-backend:
+    image: ghcr.io/afani-arba/noc-sentinel-v3-backend:latest
+    container_name: noc-monitoring-pro-backend
+    restart: always
+    logging: *default-logging
+    env_file:
+      - ./backend/.env
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/nocmonitoringpro
+      # ── Edition (Pro — fitur monitoring aktif) ────────────────────
+      - APP_EDITION=pro
+      # ── Core Monitoring Services ──────────────────────────────────
+      - ENABLE_POLLING=true
+      - ENABLE_SSE=true
+      - ENABLE_SYSLOG=true
+      - ENABLE_BACKUP=true
+      - ENABLE_ROUTING_ALERTS=true
+      - ENABLE_SPEEDTEST=true
+      - ENABLE_SESSION_CACHE=true
+      - ENABLE_SNMP_POLLER=true
+      # ── Syslog Port ────────────────────────────────────────────────
+      - SYSLOG_PORT=5143
+      # ── Billing / Hotspot DISABLED ─────────────────────────────────
+      - ENABLE_BILLING_SCHEDULER=false
+      - ENABLE_ISOLIR=false
+      - ENABLE_HOTSPOT_CLEANUP=false
+      - ENABLE_RADIUS=false
+      # ── GenieACS / BGP DISABLED (tidak diperlukan) ────────────────
+      - ENABLE_GENIEACS_SYNC=false
+      - ENABLE_BGP_STEERING=false
+      - ENABLE_ROUTE_OPTIMIZER=false
+      - ENABLE_NETWATCH_POLLER=false
+      - ENABLE_NETFLOW=false
+      # ── Firebase ───────────────────────────────────────────────────
+      - FIREBASE_CREDENTIALS_PATH=/app/firebase-service-account.json
+    ports:
+      - "8003:8000"         # Backend API (8003 = Monitoring)
+      - "5143:5143/udp"     # Syslog UDP (terima log dari MikroTik)
+    privileged: true
+    volumes:
+      - ./firebase-service-account.json:/app/firebase-service-account.json
+      - noc_monitoring_pro_update_data:/update-data
+      - ./:/app-host:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ═════════════════════════════════════════════════════════════════
+  # 2. NOC MONITORING PRO — FRONTEND
+  # ═════════════════════════════════════════════════════════════════
+  noc-frontend:
+    image: ghcr.io/afani-arba/noc-sentinel-v3-frontend:latest
+    container_name: noc-monitoring-pro-frontend
+    restart: always
+    logging: *default-logging
+    ports:
+      - "8083:80"             # Dashboard Web → http://IP:8083
+    depends_on:
+      - noc-backend
+
+  # ═════════════════════════════════════════════════════════════════
+  # 3. DATABASE MONGODB (ringan — hanya monitoring data)
+  # ═════════════════════════════════════════════════════════════════
+  mongodb:
+    image: mongo:7.0
+    container_name: noc-monitoring-pro-mongodb
+    restart: always
+    logging: *default-logging
+    command: ["mongod", "--wiredTigerCacheSizeGB", "0.5"]
+    mem_limit: 1g
+    memswap_limit: 1g
+    volumes:
+      - noc_monitoring_pro_mongodb_data:/data/db
+    expose:
+      - "27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ping:1})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ═════════════════════════════════════════════════════════════════
+  # 4. CLOUDFLARE TUNNEL (Opsional — uncomment & isi TOKEN)
+  # ═════════════════════════════════════════════════════════════════
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: noc-monitoring-pro-cloudflared
+  #   restart: always
+  #   command: tunnel run
+  #   environment:
+  #     - TUNNEL_TOKEN=ISI_TOKEN_CLOUDFLARE_ANDA
+
+  # ═════════════════════════════════════════════════════════════════
+  # 5. NOC UPDATER — Auto-update via UI Dashboard
+  # ═════════════════════════════════════════════════════════════════
+  noc-updater:
+    image: docker:27-cli
+    container_name: noc-monitoring-pro-updater
+    restart: always
+    logging: *default-logging
+    working_dir: /app-host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/app-host
+      - noc_monitoring_pro_update_data:/update-data
+      - /root/.docker/config.json:/root/.docker/config.json:ro
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        echo "noc-monitoring-pro updater siap memantau trigger..."
+        while true; do
+          if [ -f /update-data/.update-trigger ]; then
+            echo "Trigger update terdeteksi!"
+            rm -f /update-data/.update-trigger
+            echo '{"done":false,"success":null}' > /update-data/.update-running
+
+            CF="/app-host/docker-compose.yml"
+            docker compose -f "$$CF" pull noc-backend noc-frontend
+            PE=$$?
+
+            if [ $$PE -eq 0 ]; then
+              docker compose -f "$$CF" up -d --force-recreate noc-backend noc-frontend
+              echo '{"done":true,"success":true}' > /update-data/.update-running
+              echo "Update NOC Monitoring Pro selesai!"
+            else
+              printf '{"done":true,"success":false,"error":"pull failed: exit %s"}' "$$PE" > /update-data/.update-running
+            fi
+          fi
+          sleep 5
+        done
+
+volumes:
+  noc_monitoring_pro_mongodb_data:
+  noc_monitoring_pro_update_data:
