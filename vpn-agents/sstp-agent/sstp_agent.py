@@ -146,7 +146,6 @@ def _connect_via_sstpc(server: str, username: str, password: str) -> dict:
         server,
         "--",
         "usepeerdns",
-        "require-mschap-v2",
         "noauth",
         "noipdefault",
         "nodefaultroute",
