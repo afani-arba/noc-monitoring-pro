@@ -98,13 +98,18 @@ if command -v docker &>/dev/null; then
 else
     warn "Docker belum ada — install..."
     apt-get remove -y -qq docker docker-engine docker.io containerd runc 2>/dev/null || true
+    OS_ID=$(lsb_release -is | tr '[:upper:]' '[:lower:]' || grep '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"' || echo "ubuntu")
+    [[ "$OS_ID" != "debian" && "$OS_ID" != "ubuntu" ]] && OS_ID="ubuntu"
+    CODENAME=$(lsb_release -cs)
+    [[ "$CODENAME" == "trixie" ]] && CODENAME="bookworm"
+    
     install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-        | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    curl -fsSL "https://download.docker.com/linux/${OS_ID}/gpg" \
+        | gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
     chmod a+r /etc/apt/keyrings/docker.gpg
     echo \
         "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-        https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+        https://download.docker.com/linux/${OS_ID} ${CODENAME} stable" \
         | tee /etc/apt/sources.list.d/docker.list > /dev/null
     apt-get update -qq
     apt-get install -y -qq docker-ce docker-ce-cli containerd.io \
