@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // serviceKey maps each nav route to the service name used in allowed_services
 const navItems = [
@@ -73,100 +74,141 @@ const navItems = [
   { to: "/admin/license",  icon: ShieldAlert,     label: "Lisensi Sistem",         serviceKey: "license",        adminOnly: true },
 ];
 
-// â”€â”€â”€ SidebarContent sebagai komponen TERPISAH di luar Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SidebarContent sebagai komponen TERPISAH di luar Layout ──────────────────
 // PENTING: jangan definisikan komponen di dalam komponen lain —
 // setiap render akan dianggap komponen baru → remount → scroll reset
 function SidebarContent({ collapsed, filteredNav, user, onNavClick, edition }) {
   return (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <NavLink to="/" onClick={onNavClick} className="flex items-center gap-3 px-4 h-14 border-b border-border flex-shrink-0 hover:bg-secondary/50 transition-colors">
-        <div className="w-7 h-7 rounded bg-primary flex items-center justify-center flex-shrink-0">
-          <Server className="w-4 h-4 text-primary-foreground" />
-        </div>
-        {!collapsed && (
-          <div className="overflow-hidden">
-            <h1 className="text-sm font-bold tracking-tight text-foreground">ARBA</h1>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Monitoring System</p>
+    <TooltipProvider delayDuration={50}>
+      <div className="flex flex-col h-full bg-card border-r border-border/40 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
+        {/* Logo Section */}
+        <NavLink to="/" onClick={onNavClick} className="flex items-center gap-3 px-5 h-16 border-b border-border/40 flex-shrink-0 hover:bg-secondary/30 transition-colors">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 shadow-sm shadow-primary/20">
+            <Server className="w-4.5 h-4.5 text-primary-foreground" />
           </div>
-        )}
-      </NavLink>
+          {!collapsed && (
+            <div className="overflow-hidden flex flex-col justify-center">
+              <h1 className="text-[15px] font-bold tracking-tight text-foreground leading-tight">NOC Monitoring</h1>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Pro Edition</p>
+            </div>
+          )}
+        </NavLink>
 
-      {/* Nav — scrollable */}
-      <nav className="flex-1 min-h-0 px-2 py-4 space-y-1 overflow-y-auto">
-        {filteredNav.map((item, idx) => {
-          if (item.separator) {
-            return (
-              <div key={`sep-${idx}`} className="px-3 pt-3 pb-1">
-                {!collapsed && (
-                  <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold">{item.label}</p>
+        {/* Nav — scrollable */}
+        <nav className="flex-1 min-h-0 px-3 py-5 space-y-1.5 overflow-y-auto custom-scrollbar">
+          {filteredNav.map((item, idx) => {
+            if (item.separator) {
+              return (
+                <div key={`sep-${idx}`} className="px-2 pt-5 pb-2">
+                  {!collapsed ? (
+                    <p className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-semibold flex items-center gap-2">
+                      {item.label}
+                      <span className="flex-1 h-px bg-border/40"></span>
+                    </p>
+                  ) : (
+                    <div className="flex justify-center px-2">
+                      <div className="h-[2px] w-4 rounded-full bg-border/80" />
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            const navLinkContent = (isActive) => (
+              <>
+                <div className={`flex items-center justify-center transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'} ${collapsed ? 'mx-auto' : ''}`}>
+                  <item.icon className={`w-[18px] h-[18px] ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary/70'}`} />
+                </div>
+                {!collapsed && <span>{item.label}</span>}
+                {isActive && !collapsed && (
+                  <div className="absolute right-3 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-50"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                  </div>
                 )}
-                {collapsed && <div className="border-t border-border/30 my-1" />}
-              </div>
+              </>
             );
-          }
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={onNavClick}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm transition-all duration-200 group ${
-                  isActive
-                    ? "bg-primary/10 text-primary border-l-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                }`
-              }
-            >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </NavLink>
-          );
-        })}
-      </nav>
 
-      {/* Edition Badge + User info */}
-      <div className="p-3 border-t border-border/50 flex-shrink-0">
-        {/* Edition Badge */}
-        {!collapsed && (
-          <div className={`mb-2 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-widest text-center ${
-            edition === "enterprise"
-              ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
-              : "bg-primary/10 text-primary border border-primary/20"
-          }`}>
-            {edition === "enterprise" ? "⚡ Enterprise" : "🔵 Pro"}
-          </div>
-        )}
-        {/* Role badge */}
-        {!collapsed && user?.role && !(["administrator", "super_admin"]).includes(user.role) && (
-          <div className={`mb-2 px-2 py-1 rounded text-[9px] font-semibold text-center border ${
-            user.role === "noc_engineer"  ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
-            user.role === "billing_staff" ? "bg-green-500/10 text-green-400 border-green-500/20" :
-            "bg-blue-500/10 text-blue-400 border-blue-500/20"
-          }`}>
-            {user.role === "noc_engineer" ? "🟠 NOC Engineer" :
-             user.role === "billing_staff" ? "🟢 Billing Staff" :
-             "🔵 Helpdesk"}
-          </div>
-        )}
-        {!collapsed ? (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-sm bg-secondary flex items-center justify-center text-xs font-semibold text-foreground">
+            return collapsed ? (
+              <Tooltip key={item.to} placement="right">
+                <TooltipTrigger asChild>
+                  <NavLink
+                    to={item.to}
+                    end={item.end}
+                    onClick={onNavClick}
+                    className={({ isActive }) =>
+                      `flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-all duration-200 group relative ${
+                        isActive
+                          ? "bg-primary/10 text-primary shadow-[inset_0_0_0_1px_rgba(var(--primary),0.2)]"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                      }`
+                    }
+                  >
+                    {({ isActive }) => navLinkContent(isActive)}
+                  </NavLink>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="ml-2 font-medium z-50">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={onNavClick}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 group relative ${
+                    isActive
+                      ? "bg-primary/10 text-primary shadow-[inset_0_0_0_1px_rgba(var(--primary),0.2)]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+                  }`
+                }
+              >
+                {({ isActive }) => navLinkContent(isActive)}
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        {/* Edition Badge + User info */}
+        <div className="p-4 border-t border-border/40 bg-card/50 flex-shrink-0">
+          {!collapsed && (
+            <div className={`mb-3 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider text-center flex items-center justify-center gap-1.5 ${
+              edition === "enterprise"
+                ? "bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.1)]"
+                : "bg-primary/10 text-primary border border-primary/20 shadow-[0_0_10px_rgba(var(--primary),0.1)]"
+            }`}>
+              {edition === "enterprise" ? <Zap className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
+              {edition === "enterprise" ? "Enterprise" : "Pro"}
+            </div>
+          )}
+          {!collapsed && user?.role && !(["administrator", "super_admin"]).includes(user.role) && (
+            <div className={`mb-3 px-2 py-1 rounded-md text-[9px] font-semibold text-center border ${
+              user.role === "noc_engineer"  ? "bg-orange-500/10 text-orange-500 border-orange-500/20" :
+              user.role === "billing_staff" ? "bg-green-500/10 text-green-500 border-green-500/20" :
+              "bg-blue-500/10 text-blue-500 border-blue-500/20"
+            }`}>
+              {user.role === "noc_engineer" ? "🟠 NOC Engineer" :
+               user.role === "billing_staff" ? "🟢 Billing Staff" :
+               "🔵 Helpdesk"}
+            </div>
+          )}
+          
+          <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''} p-2 rounded-xl border border-transparent hover:bg-secondary/40 hover:border-border/50 transition-colors cursor-pointer`}>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary/80 to-primary/20 flex items-center justify-center text-sm font-bold text-primary-foreground shadow-sm flex-shrink-0 border border-primary/30">
               {user?.full_name?.charAt(0)?.toUpperCase() || "A"}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-foreground truncate">{user?.full_name}</p>
-              <p className="text-[10px] text-muted-foreground capitalize">{user?.role}</p>
-            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-foreground truncate">{user?.full_name}</p>
+                <p className="text-[11px] text-muted-foreground capitalize font-medium">{user?.role?.replace('_', ' ')}</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="w-8 h-8 rounded-sm bg-secondary flex items-center justify-center text-xs font-semibold text-foreground mx-auto">
-            {user?.full_name?.charAt(0)?.toUpperCase() || "A"}
-          </div>
-        )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 
@@ -272,27 +314,30 @@ export default function Layout() {
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-secondary/10 relative">
+        {/* Decorative Top Gradient Background (Optional aesthetic touch) */}
+        <div className="absolute top-0 left-0 right-0 h-[300px] bg-gradient-to-b from-primary/5 to-transparent pointer-events-none z-0"></div>
+
         {/* Header */}
-        <header className="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-border bg-card sticky top-0 z-30">
-          <div className="flex items-center gap-3">
+        <header className="h-16 flex items-center justify-between px-4 lg:px-6 border-b border-border/50 bg-card/70 backdrop-blur-xl sticky top-0 z-30 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center gap-3 z-10">
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden hover:bg-secondary/80 rounded-lg"
               onClick={() => setMobileOpen(true)}
               data-testid="mobile-menu-btn"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-5 h-5 text-muted-foreground" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="hidden lg:flex"
+              className="hidden lg:flex hover:bg-secondary/80 rounded-lg transition-colors border border-transparent hover:border-border/60"
               onClick={() => setCollapsed(!collapsed)}
               data-testid="collapse-sidebar-btn"
             >
-              <ChevronLeft className={`w-4 h-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
+              <ChevronLeft className={`w-[18px] h-[18px] text-muted-foreground transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`} />
             </Button>
           </div>
 
