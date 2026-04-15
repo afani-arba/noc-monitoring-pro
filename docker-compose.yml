@@ -121,22 +121,17 @@ services:
       start_period: 30s
 
   # ═════════════════════════════════════════════════════════════════
-  # 4. CLOUDFLARE TUNNEL (Optional — isi CLOUDFLARE_TUNNEL_TOKEN di .env)
+  # 4. CLOUDFLARE TUNNEL (Opsional — uncomment & isi TOKEN di bawah)
+  # Cara: https://one.dash.cloudflare.com → Networks → Tunnels → Create Tunnel → Copy Token
+  # Setelah uncomment, jalankan: docker compose up -d cloudflared
   # ═════════════════════════════════════════════════════════════════
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: noc-monitoring-pro-cloudflared
-    restart: unless-stopped
-    logging: *default-logging
-    command: tunnel run
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
-    depends_on:
-      - noc-frontend
-    # Cloudflared tidak butuh exposed ports — tunnel berjalan keluar (outbound only)
-    # Token didapat dari: https://one.dash.cloudflare.com → Networks → Tunnels → Create Tunnel
-    profiles:
-      - cloudflare
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: noc-monitoring-pro-cloudflared
+  #   restart: always
+  #   command: tunnel run
+  #   environment:
+  #     - TUNNEL_TOKEN=ISI_TOKEN_CLOUDFLARE_ANDA
 
   # ═════════════════════════════════════════════════════════════════
   # 5. NOC UPDATER — Auto-update via UI Dashboard

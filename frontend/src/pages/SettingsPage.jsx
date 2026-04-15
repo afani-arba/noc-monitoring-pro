@@ -1127,7 +1127,7 @@ export default function SettingsPage() {
     <div className="space-y-6 pb-16" data-testid="settings-page">
       <div className="pb-4 border-b border-border/50">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Pengaturan & Konfigurasi</h1>
-        <p className="text-sm text-muted-foreground">Kelola preferensi aplikasi, profil perusahaan, jaringan VPN, Cloudflare Tunnel, dan pencadangan data sistem NOC.</p>
+        <p className="text-sm text-muted-foreground">Kelola preferensi aplikasi, profil perusahaan, jaringan VPN, dan pencadangan data sistem NOC.</p>
       </div>
       
       <Tabs defaultValue="general" className="flex flex-col md:flex-row gap-6 md:gap-8">
