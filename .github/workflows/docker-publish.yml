@@ -51,8 +51,7 @@ jobs:
           context: ./backend
           push: true
           tags: ${{ steps.tags.outputs.backend_tags }}
-          cache-from: type=registry,ref=${{ env.BACKEND_IMAGE }}:latest
-          cache-to: type=inline
+          no-cache: true
           build-args: |
             APP_COMMIT_SHA=${{ steps.tags.outputs.short_sha }}
             APP_EDITION=monitoring_pro
