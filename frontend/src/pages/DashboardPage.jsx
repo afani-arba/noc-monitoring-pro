@@ -542,20 +542,20 @@ export default function DashboardPage() {
                     animationDuration={150}
                   />
                   <Area
-                    type="monotoneX"
+                    type="monotone"
                     dataKey="download"
                     stroke="#f43f5e"
                     fill="url(#gDlBandwidth)"
                     strokeWidth={2}
                     name="download"
                     dot={false}
-                    activeDot={{ r: 5, fill: "#f43f5e", stroke: "#fff", strokeWidth: 1.5, filter: "url(#glowDl)" }}
+                    activeDot={{ r: 5, fill: "#f43f5e", stroke: "#fff", strokeWidth: 1.5,  }}
                     isAnimationActive={true}
                     animationDuration={600}
                     animationEasing="ease-out"
                   />
                   <Area
-                    type="monotoneX"
+                    type="monotone"
                     dataKey="upload"
                     stroke="#fb923c"
                     fill="url(#gUlBandwidth)"
@@ -612,7 +612,7 @@ export default function DashboardPage() {
                     {ispSeries.map((s, i) => {
                       const colors = ["#8b5cf6","#06b6d4","#f59e0b","#10b981","#f43f5e","#3b82f6","#ec4899","#84cc16"];
                       return (
-                        <Line key={s.name} data={s.data} type="monotoneX" dataKey="download"
+                        <Line key={s.name} data={s.data} type="monotone" dataKey="download"
                           stroke={colors[i % colors.length]} strokeWidth={2} dot={false}
                           activeDot={{ r: 4, strokeWidth: 1.5 }}
                           name={`${s.name} ↓`}
@@ -635,7 +635,7 @@ export default function DashboardPage() {
                     {ispSeries.map((s, i) => {
                       const colors = ["#8b5cf6","#06b6d4","#f59e0b","#10b981","#f43f5e","#3b82f6","#ec4899","#84cc16"];
                       return (
-                        <Line key={s.name} data={s.data} type="monotoneX" dataKey="upload"
+                        <Line key={s.name} data={s.data} type="monotone" dataKey="upload"
                           stroke={colors[i % colors.length]} strokeWidth={1.5} dot={false} strokeDasharray="6 3"
                           activeDot={{ r: 4, strokeWidth: 1.5 }}
                           name={`${s.name} ↑`}
@@ -695,10 +695,10 @@ export default function DashboardPage() {
                       <YAxis tick={{ fill: "#484f58", fontSize: 9 }} tickLine={false} axisLine={false} width={40} />
                       <Tooltip contentStyle={ttStyle.contentStyle} labelStyle={ttStyle.labelStyle} cursor={ttStyle.cursor} animationDuration={150} />
                       <Legend iconType="line" wrapperStyle={{ fontSize: "10px", color: "#8b949e" }} />
-                      <Line data={compareData.current}  dataKey="download" name="Hari Ini ↓" stroke="#388bfd" strokeWidth={2} dot={false} type="monotoneX" isAnimationActive={true} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 4 }} />
-                      <Line data={compareData.previous} dataKey="download" name={`${compareData.offset_days}hr lalu ↓`} stroke="#388bfd" strokeWidth={1.5} dot={false} strokeDasharray="6 3" type="monotoneX" isAnimationActive={true} animationDuration={500} />
-                      <Line data={compareData.current}  dataKey="upload"   name="Hari Ini ↑" stroke="#3fb950" strokeWidth={2} dot={false} type="monotoneX" isAnimationActive={true} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 4 }} />
-                      <Line data={compareData.previous} dataKey="upload"   name={`${compareData.offset_days}hr lalu ↑`} stroke="#3fb950" strokeWidth={1.5} dot={false} strokeDasharray="6 3" type="monotoneX" isAnimationActive={true} animationDuration={500} />
+                      <Line data={compareData.current}  dataKey="download" name="Hari Ini ↓" stroke="#388bfd" strokeWidth={2} dot={false} type="monotone" isAnimationActive={true} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 4 }} />
+                      <Line data={compareData.previous} dataKey="download" name={`${compareData.offset_days}hr lalu ↓`} stroke="#388bfd" strokeWidth={1.5} dot={false} strokeDasharray="6 3" type="monotone" isAnimationActive={true} animationDuration={500} />
+                      <Line data={compareData.current}  dataKey="upload"   name="Hari Ini ↑" stroke="#3fb950" strokeWidth={2} dot={false} type="monotone" isAnimationActive={true} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 4 }} />
+                      <Line data={compareData.previous} dataKey="upload"   name={`${compareData.offset_days}hr lalu ↑`} stroke="#3fb950" strokeWidth={1.5} dot={false} strokeDasharray="6 3" type="monotone" isAnimationActive={true} animationDuration={500} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
