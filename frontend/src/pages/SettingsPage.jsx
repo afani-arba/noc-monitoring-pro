@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import api from "@/lib/api";
 import { Shield, Wifi, WifiOff, Save, Info, RefreshCw, Palette, Download, Upload, Database, CheckCircle, AlertTriangle, FileJson, CreditCard, Building, Cloud, CloudOff, ExternalLink, Copy, CheckCheck } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
