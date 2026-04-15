@@ -70,6 +70,7 @@ from routers.audit import router as audit_router
 from routers.scheduler import router as scheduler_router
 from routers.sstp import router as sstp_router
 from routers.l2tp import router as l2tp_router
+from routers.cloudflare import router as cloudflare_router
 _background_tasks: list = []
 
 
@@ -363,6 +364,9 @@ api.include_router(routing_alerts_router)
 # ── VPN Clients ───────────────────────────────────────────────────────────
 api.include_router(sstp_router)
 api.include_router(l2tp_router)
+
+# ── Cloudflare Tunnel ─────────────────────────────────────────────────────
+api.include_router(cloudflare_router)
 
 app.include_router(api)
 

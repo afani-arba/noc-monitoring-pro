@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import api from "@/lib/api";
-import { Shield, Wifi, WifiOff, Save, Info, RefreshCw, Palette, Download, Upload, Database, CheckCircle, AlertTriangle, FileJson, CreditCard, Building } from "lucide-react";
+import { Shield, Wifi, WifiOff, Save, Info, RefreshCw, Palette, Download, Upload, Database, CheckCircle, AlertTriangle, FileJson, CreditCard, Building, Cloud, CloudOff, ExternalLink, Copy, CheckCheck } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -879,14 +879,254 @@ function CompanyProfileSection() {
   );
 }
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// --- Cloudflare Tunnel Section ---
+function CloudflareSection() {
+  const [token, setToken] = useState("");
+  const [showToken, setShowToken] = useState(false);
+  const [status, setStatus] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [restarting, setRestarting] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const fetchStatus = () => {
+    api.get("/cloudflare/status").then(r => setStatus(r.data)).catch(() => setStatus(null));
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    const iv = setInterval(fetchStatus, 10000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const handleSave = async () => {
+    if (!token.trim()) { toast.error("Token Cloudflare tidak boleh kosong"); return; }
+    setSaving(true);
+    try {
+      const r = await api.put("/cloudflare/config", { token: token.trim() });
+      toast.success(r.data.message || "Token berhasil disimpan!");
+      setToken("");
+      fetchStatus();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Gagal menyimpan token");
+    }
+    setSaving(false);
+  };
+
+  const handleStart = async () => {
+    setStarting(true);
+    try {
+      const r = await api.post("/cloudflare/start");
+      toast.success(r.data.message);
+      setTimeout(fetchStatus, 3000);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Gagal menjalankan cloudflared");
+    }
+    setStarting(false);
+  };
+
+  const handleStop = async () => {
+    if (!confirm("Hentikan Cloudflare Tunnel?")) return;
+    setStopping(true);
+    try {
+      const r = await api.post("/cloudflare/stop");
+      toast.success(r.data.message);
+      setTimeout(fetchStatus, 2000);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Gagal menghentikan cloudflared");
+    }
+    setStopping(false);
+  };
+
+  const handleRestart = async () => {
+    setRestarting(true);
+    try {
+      const r = await api.post("/cloudflare/restart");
+      toast.success(r.data.message);
+      setTimeout(fetchStatus, 3000);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Gagal restart cloudflared");
+    }
+    setRestarting(false);
+  };
+
+  const isRunning = status?.container_running;
+  const isConfigured = status?.configured;
+
+  return (
+    <div className="bg-card border border-border rounded-sm p-4 sm:p-6 space-y-5" data-testid="cloudflare-section">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-md bg-orange-500/10 flex items-center justify-center ring-1 ring-orange-500/20">
+            <Cloud className="w-5 h-5 text-orange-400" />
+          </div>
+          <div>
+            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+              Cloudflare Tunnel
+              <span className="text-[10px] font-mono text-orange-400/70 border border-orange-500/20 bg-orange-500/5 px-1.5 py-0.5 rounded">cloudflared</span>
+            </h2>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Ekspos aplikasi NOC ke internet secara aman tanpa membuka port firewall.</p>
+          </div>
+        </div>
+        {/* Status Badge */}
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold border transition-all ${
+          isRunning
+            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+            : isConfigured
+            ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+            : "bg-secondary text-muted-foreground border-border"
+        }`}>
+          {isRunning ? <Cloud className="w-3.5 h-3.5 animate-pulse" /> : <CloudOff className="w-3.5 h-3.5" />}
+          <span>
+            {isRunning ? "TUNNEL ACTIVE" : isConfigured ? "TOKEN SET · NOT RUNNING" : "NOT CONFIGURED"}
+          </span>
+        </div>
+      </div>
+
+      {/* Status Info */}
+      {status && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {[
+            { label: "Status", value: status.status, color: isRunning ? "text-emerald-400" : "text-amber-400" },
+            { label: "Container", value: status.container_name, color: "text-blue-400" },
+            { label: "Token", value: status.token_preview || "—", color: isConfigured ? "text-orange-400" : "text-muted-foreground" },
+          ].map(s => (
+            <div key={s.label} className="bg-secondary/30 border border-border rounded-sm p-2.5">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</p>
+              <p className={`text-xs font-mono font-semibold mt-0.5 ${s.color} truncate`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Token Input */}
+      <div className="space-y-3 pt-2 border-t border-border/50">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <span>Cloudflare Tunnel Token</span>
+            <a href="https://one.dash.cloudflare.com" target="_blank" rel="noopener noreferrer"
+              className="text-[10px] text-orange-400 hover:text-orange-300 flex items-center gap-1">
+              <ExternalLink className="w-3 h-3" /> Dapatkan Token
+            </a>
+          </Label>
+          <span
+            className="text-[10px] text-muted-foreground cursor-pointer hover:underline"
+            onClick={() => setShowToken(v => !v)}
+          >
+            {showToken ? "Sembunyikan" : "Tampilkan"}
+          </span>
+        </div>
+        <Input
+          type={showToken ? "text" : "password"}
+          value={token}
+          onChange={e => setToken(e.target.value)}
+          placeholder={isConfigured ? "Token sudah tersimpan. Isi untuk mengganti..." : "eyJhIjoixxxx..."}
+          className="h-10 rounded-md bg-background/60 font-mono text-xs border-border/60 focus:border-orange-500/50"
+          autoComplete="off"
+        />
+        <p className="text-[10px] text-muted-foreground">Token didapat dari: Cloudflare Zero Trust → Networks → Tunnels → Create Tunnel → Copy token.</p>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
+        <Button
+          onClick={handleSave}
+          disabled={saving || !token.trim()}
+          size="sm"
+          className="rounded-sm gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+        >
+          <Save className="w-3.5 h-3.5" />
+          {saving ? "Menyimpan..." : "Simpan Token"}
+        </Button>
+
+        {isConfigured && !isRunning && (
+          <Button
+            onClick={handleStart}
+            disabled={starting}
+            size="sm"
+            className="rounded-sm gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <Cloud className="w-3.5 h-3.5" />
+            {starting ? "Memulai..." : "Aktifkan Tunnel"}
+          </Button>
+        )}
+
+        {isRunning && (
+          <>
+            <Button
+              onClick={handleRestart}
+              disabled={restarting}
+              size="sm"
+              variant="outline"
+              className="rounded-sm gap-2 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${restarting ? 'animate-spin' : ''}`} />
+              {restarting ? "Restarting..." : "Restart Tunnel"}
+            </Button>
+            <Button
+              onClick={handleStop}
+              disabled={stopping}
+              size="sm"
+              variant="outline"
+              className="rounded-sm gap-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
+            >
+              <CloudOff className="w-3.5 h-3.5" />
+              {stopping ? "Menghentikan..." : "Stop Tunnel"}
+            </Button>
+          </>
+        )}
+
+        <Button
+          onClick={fetchStatus}
+          size="sm"
+          variant="ghost"
+          className="rounded-sm gap-2 text-muted-foreground hover:text-foreground ml-auto"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Refresh Status
+        </Button>
+      </div>
+
+      {/* Guide */}
+      <div className="mt-2 pt-4 border-t border-border/30 space-y-3">
+        <div className="flex items-center gap-2">
+          <Info className="w-4 h-4 text-orange-400" />
+          <h3 className="text-sm font-semibold text-slate-200">Cara Setup Cloudflare Tunnel</h3>
+        </div>
+        <div className="bg-black/40 border border-white/10 rounded-md p-3 font-mono text-[10px] sm:text-xs text-orange-300/90 overflow-x-auto space-y-1.5">
+          <p className="text-slate-500"># 1. Buat Tunnel di Cloudflare Dashboard</p>
+          <p>Buka: https://one.dash.cloudflare.com → Networks → Tunnels → Create Tunnel</p>
+          <p className="text-slate-500 mt-2"># 2. Pilih Cloudflared → Copy Token</p>
+          <p>Salin token panjang yang dimulai dari "eyJ..." dan tempel di field di atas</p>
+          <p className="text-slate-500 mt-2"># 3. Set Public Hostname di Cloudflare Dashboard</p>
+          <p>Subdomain: noc.yourdomain.com → Service: http://noc-monitoring-pro-frontend:80</p>
+          <p className="text-slate-500 mt-2"># 4. Aktifkan tunnel dari halaman ini</p>
+          <p className="text-emerald-400">Klik "Simpan Token" → "Aktifkan Tunnel" → Akses via subdomain Cloudflare</p>
+        </div>
+        <div className="p-3 rounded-sm bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[11px] flex gap-2">
+          <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold mb-1">Keunggulan Cloudflare Tunnel</p>
+            <p className="text-muted-foreground leading-relaxed">
+              Tidak perlu membuka port di firewall router. Traffic dienkripsi TLS oleh Cloudflare.
+              Mendapat proteksi DDoS, WAF, dan akses management via Zero Trust Access.
+              Cocok untuk NOC yang diakses dari mana saja secara aman.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   return (
     <div className="space-y-6 pb-16" data-testid="settings-page">
       <div className="pb-4 border-b border-border/50">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Pengaturan & Konfigurasi</h1>
-        <p className="text-sm text-muted-foreground">Kelola preferensi aplikasi, profil perusahaan, jaringan VPN, dan pencadangan data sistem NOC Sentinel.</p>
+        <p className="text-sm text-muted-foreground">Kelola preferensi aplikasi, profil perusahaan, jaringan VPN, Cloudflare Tunnel, dan pencadangan data sistem NOC.</p>
       </div>
       
       <Tabs defaultValue="general" className="flex flex-col md:flex-row gap-6 md:gap-8">
@@ -899,6 +1139,9 @@ export default function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="vpn" className="w-full justify-start py-2 px-3 font-medium transition-all text-muted-foreground data-[state=active]:bg-purple-500/10 data-[state=active]:text-purple-500 data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-muted/50 rounded-md">
             <Wifi className="w-4 h-4 mr-2" /> Koneksi VPN
+          </TabsTrigger>
+          <TabsTrigger value="cloudflare" className="w-full justify-start py-2 px-3 font-medium transition-all text-muted-foreground data-[state=active]:bg-orange-400/10 data-[state=active]:text-orange-400 data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-muted/50 rounded-md">
+            <Cloud className="w-4 h-4 mr-2" /> Cloudflare Tunnel
           </TabsTrigger>
           <TabsTrigger value="polling" className="w-full justify-start py-2 px-3 font-medium transition-all text-muted-foreground data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-500 data-[state=active]:font-bold data-[state=active]:shadow-none hover:bg-muted/50 rounded-md">
             <RefreshCw className="w-4 h-4 mr-2" /> SNMP Polling
@@ -919,6 +1162,9 @@ export default function SettingsPage() {
           <TabsContent value="vpn" className="mt-0 space-y-6">
             <SstpSection />
             <L2tpSection />
+          </TabsContent>
+          <TabsContent value="cloudflare" className="mt-0 space-y-6">
+            <CloudflareSection />
           </TabsContent>
           <TabsContent value="polling" className="mt-0 space-y-6">
             <SnmpPollingSection />

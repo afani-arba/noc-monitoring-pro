@@ -27,11 +27,25 @@ import LatencyHeatmap from "@/components/ui/LatencyHeatmap";
 
 const alertIcons = { warning: AlertTriangle, error: AlertCircle, info: Info, success: CheckCircle2 };
 const alertColors = { warning: "text-yellow-500", error: "text-red-500", info: "text-blue-500", success: "text-green-500" };
-const ttStyle = { contentStyle: { backgroundColor: "#121214", borderColor: "#27272a", borderRadius: "4px", color: "#fafafa", fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" } };
+const ttStyle = {
+  contentStyle: {
+    backgroundColor: "#0d1117",
+    borderColor: "#30363d",
+    borderRadius: "6px",
+    color: "#e6edf3",
+    fontSize: "11px",
+    fontFamily: "'IBM Plex Mono', monospace",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+    padding: "8px 12px",
+  },
+  labelStyle: { color: "#8b949e", fontSize: "10px", marginBottom: "4px" },
+  itemStyle: { color: "#e6edf3", padding: "2px 0" },
+  cursor: { stroke: "rgba(139,148,158,0.15)", strokeWidth: 1 },
+};
 const Rp = (n) => `Rp ${(Number(n) || 0).toLocaleString("id-ID")}`;
-const brushStyle = { stroke: "#334155", fill: "#0f172a", travellerWidth: 6 };
+const brushStyle = { stroke: "#21262d", fill: "#0d1117", travellerWidth: 8, stroke: "#388bfd" };
 
-const BrushTick = ({ x, y, payload }) => <text x={x} y={y} dy={10} fill="#475569" fontSize={8} textAnchor="middle">{payload?.value}</text>;
+const BrushTick = ({ x, y, payload }) => <text x={x} y={y} dy={10} fill="#484f58" fontSize={8} textAnchor="middle">{payload?.value}</text>;
 function formatBwTooltip(v) {
   if (v == null) return "—";
   const n = Number(v);
@@ -485,20 +499,82 @@ export default function DashboardPage() {
                 <span className="font-mono">{td.length} samples · drag to zoom</span>
               </div>
             </div>
-            <div className="h-48 sm:h-64">
+            <div className="h-52 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={td} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                <AreaChart data={td} margin={{ top: 12, right: 12, left: -10, bottom: 24 }}>
                   <defs>
-                    <linearGradient id="gDlBandwidth" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#ef4444" stopOpacity={0.6} /><stop offset="95%" stopColor="#ef4444" stopOpacity={0.1} /></linearGradient>
-                    <linearGradient id="gUlBandwidth" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f97316" stopOpacity={0.6} /><stop offset="95%" stopColor="#f97316" stopOpacity={0.1} /></linearGradient>
+                    <linearGradient id="gDlBandwidth" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.55} />
+                      <stop offset="50%" stopColor="#fb7185" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="gUlBandwidth" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#fb923c" stopOpacity={0.55} />
+                      <stop offset="50%" stopColor="#fdba74" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#fb923c" stopOpacity={0.02} />
+                    </linearGradient>
+                    <filter id="glowDl">
+                      <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                      <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                  <XAxis dataKey="time" tick={{ fill: "#a1a1aa", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={40} />
-                  <YAxis tick={{ fill: "#a1a1aa", fontSize: 10 }} tickLine={false} axisLine={false} width={80} tickFormatter={formatBwTooltip} />
-                  <Tooltip contentStyle={ttStyle.contentStyle} formatter={(v, n) => [formatBwTooltip(v), n === "Download" || n === "download" ? "Download" : "Upload"]} />
-                  <Area type="linear" dataKey="download" stroke="#ef4444" fill="url(#gDlBandwidth)" strokeWidth={1.5} name="Download" activeDot={{ r: 4 }} />
-                  <Area type="linear" dataKey="upload" stroke="#f97316" fill="url(#gUlBandwidth)" strokeWidth={1.5} name="Upload" activeDot={{ r: 4 }} />
-                  <Brush dataKey="time" height={18} startIndex={Math.max(0, td.length - 60)} {...brushStyle} tick={<BrushTick />} />
+                  <CartesianGrid strokeDasharray="2 4" stroke="#21262d" vertical={false} />
+                  <XAxis
+                    dataKey="time"
+                    tick={{ fill: "#484f58", fontSize: 9, fontFamily: "'IBM Plex Mono', monospace" }}
+                    tickLine={false}
+                    axisLine={{ stroke: "#21262d" }}
+                    minTickGap={45}
+                  />
+                  <YAxis
+                    tick={{ fill: "#484f58", fontSize: 9, fontFamily: "'IBM Plex Mono', monospace" }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={72}
+                    tickFormatter={formatBwTooltip}
+                  />
+                  <Tooltip
+                    contentStyle={ttStyle.contentStyle}
+                    labelStyle={ttStyle.labelStyle}
+                    itemStyle={ttStyle.itemStyle}
+                    cursor={ttStyle.cursor}
+                    formatter={(v, n) => [formatBwTooltip(v), n === "download" ? "⬇ Download" : "⬆ Upload"]}
+                    animationDuration={150}
+                  />
+                  <Area
+                    type="monotoneX"
+                    dataKey="download"
+                    stroke="#f43f5e"
+                    fill="url(#gDlBandwidth)"
+                    strokeWidth={2}
+                    name="download"
+                    dot={false}
+                    activeDot={{ r: 5, fill: "#f43f5e", stroke: "#fff", strokeWidth: 1.5, filter: "url(#glowDl)" }}
+                    isAnimationActive={true}
+                    animationDuration={600}
+                    animationEasing="ease-out"
+                  />
+                  <Area
+                    type="monotoneX"
+                    dataKey="upload"
+                    stroke="#fb923c"
+                    fill="url(#gUlBandwidth)"
+                    strokeWidth={2}
+                    name="upload"
+                    dot={false}
+                    activeDot={{ r: 5, fill: "#fb923c", stroke: "#fff", strokeWidth: 1.5 }}
+                    isAnimationActive={true}
+                    animationDuration={600}
+                    animationEasing="ease-out"
+                  />
+                  <Brush
+                    dataKey="time"
+                    height={20}
+                    startIndex={Math.max(0, td.length - 60)}
+                    {...brushStyle}
+                    tick={<BrushTick />}
+                    travellerWidth={8}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -525,20 +601,22 @@ export default function DashboardPage() {
               </div>
               {/* Download chart */}
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Download (Mbps)</p>
-              <div className="h-36 sm:h-48">
+              <div className="h-40 sm:h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                    <XAxis dataKey="time" type="category" allowDuplicatedCategory={false} tick={{ fill: "#a1a1aa", fontSize: 10 }} tickLine={false} axisLine={{ stroke: "#27272a" }} />
-                    <YAxis tick={{ fill: "#a1a1aa", fontSize: 10 }} tickLine={false} axisLine={{ stroke: "#27272a" }} width={40} />
-                    <Tooltip {...ttStyle} />
-                    <Legend iconType="line" wrapperStyle={{ fontSize: "11px", color: "#a1a1aa" }} />
+                    <CartesianGrid strokeDasharray="2 4" stroke="#21262d" vertical={false} />
+                    <XAxis dataKey="time" type="category" allowDuplicatedCategory={false} tick={{ fill: "#484f58", fontSize: 9 }} tickLine={false} axisLine={{ stroke: "#21262d" }} />
+                    <YAxis tick={{ fill: "#484f58", fontSize: 9 }} tickLine={false} axisLine={false} width={40} />
+                    <Tooltip contentStyle={ttStyle.contentStyle} labelStyle={ttStyle.labelStyle} cursor={ttStyle.cursor} animationDuration={150} />
+                    <Legend iconType="line" wrapperStyle={{ fontSize: "10px", color: "#8b949e" }} />
                     {ispSeries.map((s, i) => {
                       const colors = ["#8b5cf6","#06b6d4","#f59e0b","#10b981","#f43f5e","#3b82f6","#ec4899","#84cc16"];
                       return (
-                        <Line key={s.name} data={s.data} type="monotone" dataKey="download"
+                        <Line key={s.name} data={s.data} type="monotoneX" dataKey="download"
                           stroke={colors[i % colors.length]} strokeWidth={2} dot={false}
-                          name={`${s.name} ↓`} />
+                          activeDot={{ r: 4, strokeWidth: 1.5 }}
+                          name={`${s.name} ↓`}
+                          isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
                       );
                     })}
                   </LineChart>
@@ -546,20 +624,22 @@ export default function DashboardPage() {
               </div>
               {/* Upload chart */}
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 mt-3">Upload (Mbps)</p>
-              <div className="h-36 sm:h-48">
+              <div className="h-40 sm:h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                    <XAxis dataKey="time" type="category" allowDuplicatedCategory={false} tick={{ fill: "#a1a1aa", fontSize: 10 }} tickLine={false} axisLine={{ stroke: "#27272a" }} />
-                    <YAxis tick={{ fill: "#a1a1aa", fontSize: 10 }} tickLine={false} axisLine={{ stroke: "#27272a" }} width={40} />
-                    <Tooltip {...ttStyle} />
-                    <Legend iconType="line" wrapperStyle={{ fontSize: "11px", color: "#a1a1aa" }} />
+                    <CartesianGrid strokeDasharray="2 4" stroke="#21262d" vertical={false} />
+                    <XAxis dataKey="time" type="category" allowDuplicatedCategory={false} tick={{ fill: "#484f58", fontSize: 9 }} tickLine={false} axisLine={{ stroke: "#21262d" }} />
+                    <YAxis tick={{ fill: "#484f58", fontSize: 9 }} tickLine={false} axisLine={false} width={40} />
+                    <Tooltip contentStyle={ttStyle.contentStyle} labelStyle={ttStyle.labelStyle} cursor={ttStyle.cursor} animationDuration={150} />
+                    <Legend iconType="line" wrapperStyle={{ fontSize: "10px", color: "#8b949e" }} />
                     {ispSeries.map((s, i) => {
                       const colors = ["#8b5cf6","#06b6d4","#f59e0b","#10b981","#f43f5e","#3b82f6","#ec4899","#84cc16"];
                       return (
-                        <Line key={s.name} data={s.data} type="monotone" dataKey="upload"
-                          stroke={colors[i % colors.length]} strokeWidth={2} dot={false} strokeDasharray="5 3"
-                          name={`${s.name} ↑`} />
+                        <Line key={s.name} data={s.data} type="monotoneX" dataKey="upload"
+                          stroke={colors[i % colors.length]} strokeWidth={1.5} dot={false} strokeDasharray="6 3"
+                          activeDot={{ r: 4, strokeWidth: 1.5 }}
+                          name={`${s.name} ↑`}
+                          isAnimationActive={true} animationDuration={500} animationEasing="ease-out" />
                       );
                     })}
                   </LineChart>
@@ -607,18 +687,18 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 )}
-                <div className="h-48">
+                <div className="h-52">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                      <XAxis dataKey="time" type="category" allowDuplicatedCategory={false} tick={{ fill: "#a1a1aa", fontSize: 10 }} tickLine={false} axisLine={{ stroke: "#27272a" }} />
-                      <YAxis tick={{ fill: "#a1a1aa", fontSize: 10 }} tickLine={false} axisLine={{ stroke: "#27272a" }} width={40} />
-                      <Tooltip {...ttStyle} />
-                      <Legend iconType="line" wrapperStyle={{ fontSize: "11px", color: "#a1a1aa" }} />
-                      <Line data={compareData.current}  dataKey="download" name="Hari Ini ↓" stroke="#3b82f6" strokeWidth={2} dot={false} type="monotone" />
-                      <Line data={compareData.previous} dataKey="download" name={`${compareData.offset_days}hr lalu ↓`} stroke="#3b82f6" strokeWidth={1.5} dot={false} strokeDasharray="5 3" type="monotone" />
-                      <Line data={compareData.current}  dataKey="upload"   name="Hari Ini ↑"  stroke="#10b981" strokeWidth={2} dot={false} type="monotone" />
-                      <Line data={compareData.previous} dataKey="upload"   name={`${compareData.offset_days}hr lalu ↑`} stroke="#10b981" strokeWidth={1.5} dot={false} strokeDasharray="5 3" type="monotone" />
+                      <CartesianGrid strokeDasharray="2 4" stroke="#21262d" vertical={false} />
+                      <XAxis dataKey="time" type="category" allowDuplicatedCategory={false} tick={{ fill: "#484f58", fontSize: 9 }} tickLine={false} axisLine={{ stroke: "#21262d" }} />
+                      <YAxis tick={{ fill: "#484f58", fontSize: 9 }} tickLine={false} axisLine={false} width={40} />
+                      <Tooltip contentStyle={ttStyle.contentStyle} labelStyle={ttStyle.labelStyle} cursor={ttStyle.cursor} animationDuration={150} />
+                      <Legend iconType="line" wrapperStyle={{ fontSize: "10px", color: "#8b949e" }} />
+                      <Line data={compareData.current}  dataKey="download" name="Hari Ini ↓" stroke="#388bfd" strokeWidth={2} dot={false} type="monotoneX" isAnimationActive={true} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 4 }} />
+                      <Line data={compareData.previous} dataKey="download" name={`${compareData.offset_days}hr lalu ↓`} stroke="#388bfd" strokeWidth={1.5} dot={false} strokeDasharray="6 3" type="monotoneX" isAnimationActive={true} animationDuration={500} />
+                      <Line data={compareData.current}  dataKey="upload"   name="Hari Ini ↑" stroke="#3fb950" strokeWidth={2} dot={false} type="monotoneX" isAnimationActive={true} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 4 }} />
+                      <Line data={compareData.previous} dataKey="upload"   name={`${compareData.offset_days}hr lalu ↑`} stroke="#3fb950" strokeWidth={1.5} dot={false} strokeDasharray="6 3" type="monotoneX" isAnimationActive={true} animationDuration={500} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
