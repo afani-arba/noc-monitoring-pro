@@ -57,28 +57,17 @@ def _write_token_to_env(token: str) -> None:
 
 
 def _container_running() -> bool:
-    """Cek apakah container cloudflared sedang running."""
+    """Cek apakah proses cloudflared sedang berjalan."""
     try:
-        result = subprocess.run(
-            ["docker", "ps", "--filter", f"name={CONTAINER_NAME}", "--format", "{{.Status}}"],
-            capture_output=True, text=True, timeout=5
-        )
-        status = result.stdout.strip()
-        return bool(status and "Up" in status)
+        result = subprocess.run(["pgrep", "-x", "cloudflared"], capture_output=True)
+        return result.returncode == 0
     except Exception:
         return False
 
 
 def _container_exists() -> bool:
-    """Cek apakah container cloudflared ada (running atau stopped)."""
-    try:
-        result = subprocess.run(
-            ["docker", "ps", "-a", "--filter", f"name={CONTAINER_NAME}", "--format", "{{.Status}}"],
-            capture_output=True, text=True, timeout=5
-        )
-        return bool(result.stdout.strip())
-    except Exception:
-        return False
+    """Sama dengan _container_running untuk backward compatibility."""
+    return _container_running()
 
 
 # ── GET /api/cloudflare/status ─────────────────────────────────────────────
@@ -129,59 +118,58 @@ async def update_cloudflare_config(payload: CloudflareConfigPayload):
 # ── POST /api/cloudflare/restart ───────────────────────────────────────────
 @router.post("/restart")
 async def restart_cloudflared():
-    """Restart container cloudflared (jika sudah dikonfigurasi)."""
-    if not _container_exists():
-        raise HTTPException(
-            status_code=404,
-            detail="Container cloudflared tidak ditemukan. Pastikan service cloudflared aktif di docker-compose.yml dan jalankan: docker compose up -d cloudflared"
-        )
-
+    """Restart proses cloudflared."""
     try:
-        result = subprocess.run(
-            ["docker", "restart", CONTAINER_NAME],
-            capture_output=True, text=True, timeout=30
-        )
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"Gagal restart: {result.stderr.strip()}")
-        return {"status": "success", "message": f"Container {CONTAINER_NAME} berhasil direstart."}
+        # Hentikan dulu jika berjalan
+        subprocess.run(["pkill", "-x", "cloudflared"], capture_output=True)
+        
+        token = _read_token_from_env()
+        if not token:
+            raise HTTPException(status_code=400, detail="Token tidak dikonfigurasi.")
+            
+        cmd = ["cloudflared", "tunnel", "--no-autoupdate", "run", "--token", token]
+        # Jalankan di background (detached)
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
+        
+        return {"status": "success", "message": "Proses cloudflared berhasil direstart."}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error restart container: {e}")
+        raise HTTPException(status_code=500, detail=f"Error restart cloudflared: {e}")
 
 
 # ── POST /api/cloudflare/start ────────────────────────────────────────────
 @router.post("/start")
 async def start_cloudflared():
-    """Start container cloudflared via docker compose."""
+    """Start proses cloudflared via subprocess."""
+    if _container_running():
+        return {"status": "success", "message": "Cloudflare tunnel sudah berjalan."}
+        
     try:
-        compose_file = APP_HOST_DIR / "docker-compose.yml"
-        cmd = ["docker", "compose", "-f", str(compose_file), "up", "-d", "cloudflared"]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"Gagal start cloudflared: {result.stderr.strip()}")
+        token = _read_token_from_env()
+        if not token:
+            raise HTTPException(status_code=400, detail="Token belum dikonfigurasi. Simpan token dahulu.")
+            
+        cmd = ["cloudflared", "tunnel", "--no-autoupdate", "run", "--token", token]
+        # Executing as a background daemon process
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
+        
         return {"status": "success", "message": "Cloudflare tunnel started."}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Error start cloudflared: {e}")
 
 
 # ── POST /api/cloudflare/stop ─────────────────────────────────────────────
 @router.post("/stop")
 async def stop_cloudflared():
-    """Stop container cloudflared."""
-    if not _container_exists():
-        raise HTTPException(status_code=404, detail="Container cloudflared tidak ditemukan.")
+    """Stop proses cloudflared."""
+    if not _container_running():
+        raise HTTPException(status_code=404, detail="Proses cloudflared tidak berjalan.")
     try:
-        result = subprocess.run(
-            ["docker", "stop", CONTAINER_NAME],
-            capture_output=True, text=True, timeout=30
-        )
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"Gagal stop: {result.stderr.strip()}")
+        result = subprocess.run(["pkill", "-x", "cloudflared"], capture_output=True, text=True)
         return {"status": "success", "message": "Cloudflare tunnel dihentikan."}
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Error stopping cloudflared: {e}")
+

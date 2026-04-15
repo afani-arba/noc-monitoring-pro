@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y \
     && tar -xzf gobgp_3.25.0_linux_amd64.tar.gz \
     && mv gobgp /usr/local/bin/ \
     && rm -f gobgpd gobgp_3.25.0_linux_amd64.tar.gz \
+    && wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O /usr/local/bin/cloudflared \
+    && chmod +x /usr/local/bin/cloudflared \
     && rm -rf /var/lib/apt/lists/*
 
 # Set timezone ke WIB (Asia/Jakarta)
